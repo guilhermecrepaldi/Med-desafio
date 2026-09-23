@@ -10,6 +10,11 @@ O objetivo deste repositório é implementar uma API REST capaz de receber dados
 
 A implementação ainda não foi iniciada de propósito. Primeiro estão sendo registradas as regras, ambiguidades e decisões técnicas para que o código nasça em cima de um modelo claro.
 
+## Referências do processo seletivo
+
+- [Descrição da vaga](docs/vaga.md)
+- [Enunciado completo do desafio técnico](docs/desafio.md)
+
 ## O problema
 
 A aplicação receberá três tipos principais de informação:
@@ -96,6 +101,8 @@ Também serão cobertos cenários de chegada fora de ordem e múltiplos itens no
 ## Próximas etapas
 
 ```text
+[feito] Registrar a vaga
+[feito] Registrar o desafio técnico
 [feito] Entender o domínio
 [feito] Desenhar os fluxos principais
 [feito] Registrar decisões técnicas iniciais
