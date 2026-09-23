@@ -6,7 +6,7 @@ O objetivo deste repositório é implementar uma API REST capaz de receber dados
 
 ## Status
 
-**Fase atual:** entendimento do domínio e definição da modelagem.
+**Fase atual:** modelagem inicial concluída; o backend ainda não foi iniciado.
 
 A implementação ainda não foi iniciada de propósito. Primeiro estão sendo registradas as regras, ambiguidades e decisões técnicas para que o código nasça em cima de um modelo claro.
 
@@ -72,6 +72,8 @@ GET /exames/:accessionNumber
 - [Domínio do desafio](docs/dominio.md)
 - [Fluxos de integração](docs/fluxo-integracao.md)
 - [Decisões técnicas](docs/decisoes-tecnicas.md)
+- [Níveis de entrega](docs/niveis-de-entrega.md)
+- [Modelo de dados](docs/modelo-dados.md)
 
 ## Princípios da solução
 
@@ -106,7 +108,7 @@ Também serão cobertos cenários de chegada fora de ordem e múltiplos itens no
 [feito] Entender o domínio
 [feito] Desenhar os fluxos principais
 [feito] Registrar decisões técnicas iniciais
-[ ] Modelar o banco de dados
+[feito] Modelar o banco de dados
 [ ] Criar o projeto NestJS
 [ ] Configurar PostgreSQL e Docker Compose
 [ ] Implementar Pedido
