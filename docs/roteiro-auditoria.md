@@ -3,22 +3,25 @@
 ## Objetivo
 
 Este roteiro permite conferir, de forma reproduzível, se o projeto atende ao
-desafio sem confundir o que já foi decidido em documentação com o que já foi
-implementado. Ele serve tanto para revisão manual quanto para orientar os
-testes automatizados futuros.
+desafio sem confundir código implementado com evidência realmente executada.
+Ele serve tanto para revisão manual quanto para orientar os testes
+automatizados e o smoke test.
 
 O enunciado em [desafio.md](desafio.md) é a fonte das regras funcionais. Este
-arquivo não adiciona requisitos de negócio.
+arquivo não adiciona requisitos de negócio. A
+[matriz de auditoria da entrega](auditoria-entrega.md) registra o resultado
+mais recente dos comandos executados e dos bloqueios externos; ela é a
+referência para não transformar uma validação ainda não executada em aprovação.
 
 ## Legenda de estado
 
 | Marca | Significado |
 | --- | --- |
-| ✅ Documentado | Pode ser verificado agora nos arquivos versionados. |
-| ⬜ Pendente de implementação | É uma regra definida, mas ainda não há código executável. |
-| ✅ Implementado | Só será usada quando houver evidência por teste, comando e resultado. |
+| ✅ PASS executado | O comando ou teste foi concluído e seu resultado está registrado na matriz. |
+| 🟡 Implementado, sem execução final | Há código e testes, mas a evidência dependente de ambiente ainda não foi executada. |
+| 🚫 Bloqueado externamente | A validação não pôde ser executada por uma limitação registrada; não equivale a aprovação. |
 
-## Auditoria 0 — confirmar o ponto de partida
+## Auditoria 0 — confirmar o estado auditado
 
 Execute estes comandos na raiz do repositório:
 
@@ -27,32 +30,45 @@ git status --short --branch
 git log --oneline -5
 git diff --check
 rg --files --hidden -g '!.git/**'
+npm run lint
+npm run format:check
+npm test
+npm run build
+docker compose config
 ~~~
 
-Resultado esperado no checkpoint atual:
+Confirme que existem, entre outros, os seguintes artefatos:
 
-1. A branch está limpa e possui os commits de documentação à frente de
-   <code>origin/main</code> enquanto não houver push.
-2. Existem <code>README.md</code> e os documentos em <code>docs/</code>.
-3. Não existem ainda <code>src/</code>, <code>package.json</code>,
-   <code>Dockerfile</code> ou <code>docker-compose.yml</code>.
-4. Portanto, qualquer afirmação de API funcionando, Docker subindo ou testes
-   passando seria incorreta neste momento.
+1. <code>src/</code>, <code>test/</code>, <code>package.json</code>,
+   <code>Dockerfile</code>, <code>docker-compose.yml</code> e
+   <code>.env.example</code>;
+2. entidades e migration em <code>src/database/</code>;
+3. controllers, DTOs e serviços em <code>src/pedidos</code>,
+   <code>src/documentos</code> e <code>src/exames</code>;
+4. reconciliação centralizada em <code>src/integration/</code>;
+5. testes unitários em <code>src/</code> e E2E em <code>test/</code>.
+
+O resultado histórico dos comandos de lint, formatação, unitários, build e
+validação estática do Compose está em
+[auditoria-entrega.md](auditoria-entrega.md). Antes de encerrar uma nova
+auditoria, atualize essa matriz com a saída observada. A existência dos
+artefatos acima **não** comprova por si só PostgreSQL, migrations, E2E, Docker
+em execução ou smoke HTTP.
 
 ## Auditoria 1 — rastrear cada requisito do desafio
 
 | ID | Requisito | Evidência atual | Estado atual |
 | --- | --- | --- | --- |
-| RF-01 | Salvar Pedido por <code>CodigoPedido</code>. | Modelo e cenário funcional. | ✅ Documentado / ⬜ executável |
-| RF-02 | Adicionar somente ItemPedido novo no reenvio. | Constraint e Cenário D. | ✅ Documentado / ⬜ executável |
-| RF-03 | Integrar Pedido por <code>AccessionNumber</code>. | Modelo e Cenários A e B. | ✅ Documentado / ⬜ executável |
-| RF-04 | Rejeitar Documento duplicado por código + pedido. | Constraint e Cenário E. | ✅ Documentado / ⬜ executável |
-| RF-05 | Vincular Documento aos Exames aplicáveis do Pedido. | Tabela de associação e Cenário A. | ✅ Documentado / ⬜ executável |
-| RF-06 | Receber Exame e reconciliar pendências. | ReconciliationService e Cenário A. | ✅ Documentado / ⬜ executável |
-| RF-07 | Expor os seis endpoints obrigatórios. | README e Nível 1. | ✅ Documentado / ⬜ executável |
-| RT-01 | Node.js, REST, persistência, Docker, README, erros, Jest, Swagger e logs. | Níveis de entrega. | ⬜ Pendente de implementação |
-| RT-02 | PostgreSQL, NestJS, TypeORM, migrations e Compose. | Decisões e Nível 2. | ✅ Documentado / ⬜ executável |
-| RT-03 | Não usar cron na primeira versão. | Decisão técnica. | ✅ Documentado |
+| RF-01 | Salvar Pedido por <code>CodigoPedido</code>. | <code>PedidosService</code>, entidade e migration; E2E de Pedido/reenvio. | 🟡 Implementado; E2E depende de PostgreSQL. |
+| RF-02 | Adicionar somente ItemPedido novo no reenvio. | Constraint e Cenário D; serviço de Pedido. | 🟡 Implementado; E2E depende de PostgreSQL. |
+| RF-03 | Integrar Pedido por <code>AccessionNumber</code>. | <code>ReconciliationService</code>; Cenários A, B e C. | 🟡 Implementado; E2E depende de PostgreSQL. |
+| RF-04 | Rejeitar Documento duplicado por código + pedido. | Constraint, serviço de Documento e Cenário E. | 🟡 Implementado; E2E depende de PostgreSQL. |
+| RF-05 | Vincular Documento aos Exames aplicáveis do Pedido. | Entidade de associação e <code>ReconciliationService</code>. | 🟡 Implementado; E2E depende de PostgreSQL. |
+| RF-06 | Receber Exame e reconciliar pendências. | Serviço de Exame e <code>ReconciliationService</code>. | 🟡 Implementado; E2E depende de PostgreSQL. |
+| RF-07 | Expor os seis endpoints obrigatórios. | Controllers, DTOs, Swagger e testes E2E. | 🟡 Implementado; smoke HTTP depende da API em execução. |
+| RT-01 | Node.js, REST, persistência, Docker, README, erros, Jest, Swagger e logs. | NestJS, TypeORM, Docker, README, filtro global, testes, Swagger e logs estruturados. | Ver [matriz](auditoria-entrega.md). |
+| RT-02 | PostgreSQL, NestJS, TypeORM, migrations e Compose. | DataSource, migration inicial e Compose. | 🟡 Implementado; execução PostgreSQL bloqueada no ambiente atual. |
+| RT-03 | Não usar cron na primeira versão. | Reconciliação síncrona na escrita, sem scheduler. | ✅ Verificável no código. |
 
 Para conferir as fontes desta tabela:
 
@@ -61,7 +77,7 @@ rg -n "POST /pedidos|POST /documentos|POST /exames|GET /pedidos" README.md docs
 rg -n "cron|ReconciliationService|409 Conflict" docs
 ~~~
 
-## Auditoria 2 — conferir a modelagem antes de escrever código
+## Auditoria 2 — conferir a modelagem e sua materialização no banco
 
 Leia, nesta ordem:
 
@@ -90,9 +106,11 @@ rg -n "UNIQUE \(pedido_id, codigo_item_pedido\)|UNIQUE \(accession_number\)" doc
 rg -n "codigo_pedido_referencia|documentos_exames|ReconciliationService" docs/modelo-dados.md
 ~~~
 
-## Auditoria 3 — cenários funcionais que a API deverá provar
+## Auditoria 3 — cenários funcionais que a API deve provar
 
-Use estes dados de referência depois de a API existir:
+Use estes dados de referência contra a API em execução. Os E2E reproduzem os
+fluxos principais, mas a inspeção manual abaixo continua sendo a evidência do
+smoke test final.
 
 ~~~json
 {
@@ -183,24 +201,45 @@ ordem. Ele não deve criar um Pedido incompleto só para aceitar o Documento.
 3. Confirmar resposta <code>409 Conflict</code>.
 4. Confirmar no GET e no banco que continua existindo apenas um documento.
 
-## Auditoria 4 — comandos de execução, depois da implementação
+## Auditoria 4 — comandos de execução real
 
-Os comandos abaixo são a evidência esperada do Nível 1 ou 2. Eles ainda não
-devem funcionar enquanto não existirem <code>package.json</code>, Docker e
-migrations.
+Os comandos abaixo verificam uma instalação que parte de um banco disponível.
+Os resultados já executados e os bloqueios do ambiente atual estão registrados
+em [auditoria-entrega.md](auditoria-entrega.md). Execute-os novamente em um
+ambiente com acesso ao daemon Docker antes de considerar a entrega aprovada.
 
 ~~~bash
-docker compose up --build
-npm run migration:run
+npm ci
+npm run lint
+npm run format:check
 npm test
+npm run build
+docker compose config
+docker compose up --build -d
+docker compose ps
+npm run migration:show
+npm run test:e2e
+curl -fsS http://localhost:3000/health
+curl -fsS http://localhost:3000/docs-json > /dev/null
+~~~
+
+Para auditar uma instalação sem dados anteriores, use um ambiente Docker
+isolado e, somente se puder descartar o volume daquele ambiente, execute:
+
+~~~bash
+docker compose down -v
+docker compose up --build -d
+docker compose ps
 npm run test:e2e
 ~~~
 
-A entrega só poderá ser marcada como implementada quando o README passar a
-explicar os nomes reais dos scripts, pré-requisitos, portas e variáveis de
-ambiente sem segredos.
+<code>docker compose down -v</code> remove o volume PostgreSQL do projeto;
+não o use contra dados que precisem ser preservados. O Compose inicia a API
+com migrations habilitadas. Para uma execução local sem o container da API,
+suba apenas <code>db</code> e rode <code>npm run migration:run</code> antes de
+<code>npm run start:dev</code>, conforme o README.
 
-## Auditoria 5 — validação HTTP manual, depois da implementação
+## Auditoria 5 — validação HTTP manual
 
 Defina a URL apenas no terminal de auditoria:
 
@@ -209,7 +248,9 @@ AUDIT_API_URL=http://localhost:3000
 ~~~
 
 Use os payloads do cenário anterior para enviar os três POSTs na ordem de cada
-cenário. Após cada escrita, consulte:
+cenário. Envie um <code>x-request-id</code> conhecido em pelo menos uma
+requisição e confirme que o mesmo valor volta no header de resposta. Após cada
+escrita, consulte:
 
 ~~~bash
 curl "$AUDIT_API_URL/pedidos/616"
@@ -224,12 +265,22 @@ A auditoria deve avaliar o estado final, não apenas o código HTTP de sucesso:
 - Exame pode existir sem Pedido.
 - Vínculos não se repetem quando a reconciliação é disparada mais de uma vez.
 
-Os contratos detalhados de resposta serão definidos no Swagger durante a
-implementação. Até lá, não há motivo para inventar corpos de resposta.
+Os contratos detalhados, exemplos, status HTTP e erros estão em
+<code>/docs</code> e em <code>/docs-json</code>. Compare a resposta com os
+DTOs publicados pelo Swagger; não trate apenas um <code>2xx</code> como
+aprovação do cenário.
 
-## Auditoria 6 — validar o banco, depois da migration
+## Auditoria 6 — validar o banco depois das migrations
 
-No container PostgreSQL, confira constraints antes de testar fluxos:
+No container PostgreSQL, confira constraints antes de testar fluxos. O comando
+abaixo abre uma sessão no banco padrão do Compose; ajuste as variáveis caso a
+auditoria use outra configuração:
+
+~~~bash
+docker compose exec db psql -U postgres -d med_desafio
+~~~
+
+Então execute:
 
 ~~~sql
 SELECT conname, pg_get_constraintdef(oid)
@@ -270,6 +321,12 @@ Resultado esperado:
 
 ## Critérios de aceite para fechar cada nível
 
+As caixas abaixo são um registro de aceite para a próxima auditoria. O estado
+local já observado deve ser consultado na
+[matriz de auditoria da entrega](auditoria-entrega.md). Em especial, não marque
+Docker, migrations, E2E ou smoke HTTP como aprovados enquanto esses comandos
+não tiverem sido concluídos em PostgreSQL acessível.
+
 ### Nível 1
 
 - [ ] Docker sobe aplicação e PostgreSQL.
@@ -300,7 +357,9 @@ Resultado esperado:
 
 ## Como registrar a auditoria
 
-Ao concluir uma conferência, registre no pull request, issue ou commit:
+Ao concluir uma conferência, atualize
+[auditoria-entrega.md](auditoria-entrega.md) e registre no pull request, issue
+ou commit:
 
 1. data e commit auditado;
 2. comando executado;
@@ -308,5 +367,6 @@ Ao concluir uma conferência, registre no pull request, issue ou commit:
 4. cenário validado;
 5. pendência ou decisão nova, caso exista.
 
-Não marque uma caixa como concluída por existir apenas documentação. A marca
-<code>✅ Implementado</code> exige evidência executável.
+Não marque uma caixa como concluída por existir apenas documentação ou código.
+Um item só recebe <code>✅ PASS executado</code> após haver comando, resultado
+e cenário correspondentes registrados.

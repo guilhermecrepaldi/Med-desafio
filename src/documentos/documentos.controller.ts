@@ -4,6 +4,7 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -38,6 +39,7 @@ export class DocumentosController {
   @ApiCreatedResponse({ type: DocumentoResponseDto, description: 'Documento criado.' })
   @ApiBadRequestResponse({ type: ErrorResponseDto })
   @ApiConflictResponse({ type: ErrorResponseDto, description: 'Documento duplicado.' })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   async create(@Body() dto: CreateDocumentoDto): Promise<DocumentoResponseDto> {
     const result = await this.documentosService.receive(dto);
 
@@ -50,6 +52,7 @@ export class DocumentosController {
   @ApiOkResponse({ type: DocumentoResponseDto, isArray: true })
   @ApiBadRequestResponse({ type: ErrorResponseDto })
   @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   async findByCodigoPedido(
     @Param('codigoPedido') codigoPedido: string,
   ): Promise<DocumentoResponseDto[]> {

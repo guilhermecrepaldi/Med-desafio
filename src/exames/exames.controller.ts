@@ -4,6 +4,7 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -40,6 +41,7 @@ export class ExamesController {
   @ApiOkResponse({ type: ExameResponseDto, description: 'Reenvio idempotente de exame existente.' })
   @ApiBadRequestResponse({ type: ErrorResponseDto })
   @ApiConflictResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   async create(
     @Body() dto: CreateExameDto,
     @Res({ passthrough: true }) response: Response,
@@ -56,6 +58,7 @@ export class ExamesController {
   @ApiOkResponse({ type: ExameResponseDto })
   @ApiBadRequestResponse({ type: ErrorResponseDto })
   @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   async findOne(@Param('accessionNumber') accessionNumber: string): Promise<ExameResponseDto> {
     return this.examesService.findByAccession(accessionNumber);
   }

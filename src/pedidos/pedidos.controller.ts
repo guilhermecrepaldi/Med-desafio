@@ -4,6 +4,7 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiNotFoundResponse,
   ApiOperation,
@@ -52,6 +53,7 @@ export class PedidosController {
   })
   @ApiBadRequestResponse({ type: ErrorResponseDto })
   @ApiConflictResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   async create(
     @Body() dto: CreatePedidoDto,
     @Res({ passthrough: true }) response: Response,
@@ -68,6 +70,7 @@ export class PedidosController {
   @ApiOkResponse({ type: PedidoResponseDto })
   @ApiBadRequestResponse({ type: ErrorResponseDto })
   @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   async findOne(@Param('codigoPedido') codigoPedido: string): Promise<PedidoResponseDto> {
     return this.pedidosService.findByCodigo(codigoPedido);
   }
