@@ -19,10 +19,7 @@ export default tseslint.config(
       },
     },
     rules: {
-      '@typescript-eslint/consistent-type-imports': [
-        'error',
-        { prefer: 'type-imports' },
-      ],
+      // Decorator metadata do NestJS precisa preservar imports de classes injetadas.
       '@typescript-eslint/no-explicit-any': 'error',
     },
   },
