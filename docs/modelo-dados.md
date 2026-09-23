@@ -231,9 +231,9 @@ desafio; impedir exclusões acidentais preserva a integridade e evita introduzir
 
 ## Reconciliação e estados
 
-A lógica ficará centralizada em um serviço de aplicação, previsto como
-<code>ReconciliationService</code>, e não nos controllers. Em uma única
-transação quando houver escrita e reconciliação relacionadas, ele deve:
+A lógica fica centralizada em <code>ReconciliationService</code>, e não nos
+controllers. Em uma única transação quando há escrita e reconciliação
+relacionadas, ele:
 
 1. localizar itens por <code>accession_number</code> quando um Exame chega;
 2. localizar Exames existentes quando um Pedido ou item novo chega;
@@ -262,9 +262,7 @@ Não haverá cron na primeira implementação. A tentativa ocorre ao receber
 Pedido, Documento ou Exame. Em produção, um job de recuperação pode existir
 como mecanismo adicional, mas não é necessário para atender ao desafio.
 
-## Decisões e dúvidas abertas
-
-### Decisões desta modelagem
+## Decisões confirmadas
 
 1. ItemPedido e Exame são entidades diferentes e a correlação entre eles é
    lógica por <code>AccessionNumber</code>, não por FK.
@@ -281,22 +279,16 @@ como mecanismo adicional, mas não é necessário para atender ao desafio.
    modalidade são persistidos, mas não bloqueiam a correlação porque o desafio
    não define tratamento de divergências.
 
-### Pontos que ainda precisam de decisão antes dos endpoints
+6. Reenvio de Pedido com cabeçalho ou ItemPedido divergente retorna
+   <code>409 Conflict</code>; o primeiro dado persistido não é alterado em
+   silêncio. Reenvio idêntico acrescenta somente itens novos.
+7. Reenvio idêntico de Exame é idempotente e executa reconciliação novamente;
+   dados divergentes para o mesmo <code>AccessionNumber</code> retornam
+   <code>409 Conflict</code>.
+8. A normalização de chaves é mínima: aceita número ou texto, converte para
+   texto, aplica <code>trim</code> e compara com sensibilidade exata. Assim,
+   <code>930</code> e <code>"0930"</code> continuam distintos.
 
-1. **Reenvio com conteúdo divergente:** o desafio manda adicionar apenas itens
-   novos, mas não diz se cabeçalho do Pedido ou item já existente pode ser
-   atualizado. A API precisa decidir entre manter o primeiro valor, atualizar
-   ou retornar conflito; não deve fazer isso silenciosamente.
-2. **Reenvio de Exame:** a unicidade protege o banco, mas o desafio não define
-   se evento idêntico é idempotente nem como tratar campos divergentes.
-3. **Integração parcial:** a escolha atual é marcar Pedido integrado com pelo
-   menos um Exame, pois não há estado parcial no enunciado. Se a avaliação
-   exigir todos os itens integrados, a semântica deverá ser alterada de forma
-   explícita.
-4. **Normalização de chaves:** antes de implementar DTOs, deve-se fixar se
-   espaços são removidos e se comparações de códigos/accession são estritamente
-   sensíveis a maiúsculas e minúsculas. A regra inicial recomendada é
-   normalização mínima (trim) e comparação textual exata.
-
-As dúvidas foram mantidas visíveis para evitar que a implementação altere
-silenciosamente as regras de <code>docs/desafio.md</code>.
+Essas decisões não alteram regra explícita de
+[docs/desafio.md](desafio.md); apenas tornam previsíveis as ambiguidades de
+reenvio e representação que o enunciado não fixa.

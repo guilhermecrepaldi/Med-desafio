@@ -4,11 +4,12 @@ Este arquivo registra decisões tomadas durante a construção para que a soluç
 
 ## Estado atual
 
-A modelagem inicial está documentada em [modelo-dados.md](modelo-dados.md).
-O backend ainda não foi iniciado: as decisões abaixo devem orientar a primeira
-migration e os endpoints, sem antecipar infraestrutura fora do escopo.
+A modelagem está implementada em NestJS, TypeORM e migrations PostgreSQL. A
+API, a reconciliação por escrita, Docker Compose, Swagger, logs estruturados,
+testes unitários e a suíte E2E estão versionados. A documentação de execução e
+os contratos HTTP ficam no [README](../README.md).
 
-## Stack planejada
+## Stack utilizada
 
 - Node.js
 - NestJS
@@ -20,7 +21,9 @@ migration e os endpoints, sem antecipar infraestrutura fora do escopo.
 - Docker Compose
 - logs estruturados
 
-A stack pode sofrer pequenos ajustes durante a implementação se houver justificativa técnica.
+As dependências são fixadas por <code>package-lock.json</code>. A versão do
+adaptador Nest–TypeORM acompanha NestJS 11 para manter a execução CommonJS do
+Jest compatível com a aplicação.
 
 ## Banco relacional
 
@@ -95,27 +98,46 @@ Documento -> Pedido -> ItemPedido -> AccessionNumber -> Exame.
 
 ## Tratamento de erros
 
-Planejamento:
+Comportamento implementado:
 
 - `400 Bad Request`: payload inválido;
 - `404 Not Found`: recurso solicitado nos endpoints GET não encontrado;
 - `409 Conflict`: duplicidade proibida, especialmente documento;
 - `500 Internal Server Error`: erro inesperado.
 
-## Dúvidas abertas antes da API
+## Reenvios e normalização
 
-- Reenvio de Pedido com dados divergentes em cabeçalho ou item já existente:
-  manter, atualizar ou retornar conflito.
-- Reenvio de Exame com o mesmo accession: definir comportamento idempotente e
-  tratamento de campos divergentes.
-- Normalização exata de códigos e accession: a recomendação inicial é aplicar
-  `trim` e fazer comparação textual exata.
-- O booleano `integrado` foi interpretado como existência de pelo menos uma
-  correlação; não significa que todos os itens de um pedido foram recebidos.
+As ambiguidades antes abertas foram resolvidas de forma conservadora e estão
+cobertas pelo README e pelos E2E:
 
-Esses pontos permanecem visíveis para que a implementação não escolha uma
-regra silenciosamente. O enunciado original continua soberano quando houver
-uma definição explícita.
+- identificadores externos aceitam número ou texto, são convertidos para texto
+  e recebem apenas <code>trim</code>; comparações são exatas e preservam zeros
+  à esquerda quando a origem os envia como texto;
+- reenvio idêntico de Pedido reutiliza o registro e adiciona só ItemPedido
+  novo; cabeçalho ou item já persistido com conteúdo divergente retorna
+  <code>409 Conflict</code>, sem alterar silenciosamente a primeira mensagem;
+- reenvio idêntico de Exame com o mesmo accession é idempotente e dispara
+  reconciliação novamente; conteúdo divergente retorna <code>409 Conflict</code>;
+- Documento repetido sempre retorna <code>409 Conflict</code>, porque a regra
+  original proíbe a combinação de códigos duplicada;
+- <code>integrado</code> significa existência de ao menos uma correlação, não
+  completude de todos os itens do Pedido.
+
+## Transações e concorrência
+
+Cada POST executa persistência e reconciliação na mesma transação TypeORM. Se
+o serviço de reconciliação falhar, Pedido/Documento/Exame recém-criado e os
+vínculos derivados são revertidos juntos. Constraints continuam sendo a última
+linha de proteção contra duplicidade; o desafio deixa concorrência avançada
+fora do escopo.
+
+## Logs e rastreabilidade
+
+O middleware reutiliza um <code>x-request-id</code> seguro ou gera um UUID e
+o devolve na resposta. Logs JSON incluem esse identificador e eventos de
+recebimento, criação/reuso/atualização, item adicionado, reconciliação,
+vínculo, integração e falhas. O logger não registra corpo HTTP nem conteúdo
+Base64 de Documento.
 
 ## Exemplos do enunciado
 
