@@ -156,6 +156,25 @@ describe('Med-desafio (e2e)', () => {
     ]);
   });
 
+  it('reconcilia quando documento e exame chegam antes do pedido', async () => {
+    const api = request(app.getHttpServer());
+
+    await api.post('/documentos').send(documento()).expect(201);
+    await api.post('/exames').send(exame()).expect(201);
+    await api.post('/pedidos').send(pedido()).expect(201);
+
+    const pedidoIntegrado = await api.get('/pedidos/616').expect(200);
+    const documentos = await api.get('/documentos/616').expect(200);
+
+    expect(pedidoIntegrado.body.Integrado).toBe(true);
+    expect(documentos.body).toEqual([
+      expect.objectContaining({
+        Integrado: true,
+        Exames: [expect.objectContaining({ AccessionNumber: '930' })],
+      }),
+    ]);
+  });
+
   it('reenvia pedido com item novo sem duplicar o item existente', async () => {
     const api = request(app.getHttpServer());
 
@@ -169,6 +188,34 @@ describe('Med-desafio (e2e)', () => {
     expect(
       replay.body.Exames.map((item: { AccessionNumber: string }) => item.AccessionNumber).sort(),
     ).toEqual(['930', '931']);
+  });
+
+  it('rejeita reenvios de pedido com cabeçalho ou item divergente', async () => {
+    const api = request(app.getHttpServer());
+
+    await api.post('/pedidos').send(pedido()).expect(201);
+    await api
+      .post('/pedidos')
+      .send({ ...pedido(), NomePaciente: 'OUTRO PACIENTE' })
+      .expect(409);
+    await api
+      .post('/pedidos')
+      .send({
+        ...pedido(),
+        Exames: [
+          {
+            ...pedido().Exames[0],
+            AccessionNumber: 'DIVERGENTE',
+          },
+        ],
+      })
+      .expect(409);
+
+    const persistido = await api.get('/pedidos/616').expect(200);
+    expect(persistido.body).toMatchObject({
+      NomePaciente: patientName,
+      Exames: [expect.objectContaining({ AccessionNumber: '930' })],
+    });
   });
 
   it('rejeita documento duplicado com 409 e preserva o requestId recebido', async () => {
@@ -249,6 +296,11 @@ describe('Med-desafio (e2e)', () => {
       errorCode: 'HTTP_400',
       requestId: expect.any(String),
     });
+
+    await api
+      .post('/documentos')
+      .send({ ...documento(), Documento: '   ' })
+      .expect(400);
 
     await api.get('/pedidos/inexistente').expect(404);
     await api.get('/documentos/inexistente').expect(404);

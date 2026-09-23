@@ -301,6 +301,7 @@ cp .env.example .env
 | `DB_USERNAME` | `postgres` | Usuário do banco. |
 | `DB_PASSWORD` | `postgres` | Senha de desenvolvimento. |
 | `DB_DATABASE` | `med_desafio` | Banco principal. |
+| `E2E_DB_DATABASE` | `med_desafio_test` | Banco exclusivo da suíte E2E. |
 | `RUN_MIGRATIONS_ON_START` | `false` | Aplica migrations no boot quando `true`. |
 
 `.env` não é versionado. Não use senhas ou tokens reais em
@@ -381,6 +382,11 @@ de rodá-los localmente:
 docker compose up -d db
 npm run test:e2e
 ```
+
+`npm run test:e2e` sempre usa `E2E_DB_DATABASE` (ou
+`med_desafio_test` como padrão), mesmo que o `.env` tenha
+`DB_DATABASE=med_desafio`. Isso evita que a suíte limpe acidentalmente o
+banco principal de desenvolvimento.
 
 Comandos disponíveis:
 

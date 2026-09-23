@@ -29,6 +29,7 @@ jobs:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_DATABASE: med_desafio_test
+      E2E_DB_DATABASE: med_desafio_test
       RUN_MIGRATIONS_ON_START: 'false'
     steps:
       - uses: actions/checkout@v4

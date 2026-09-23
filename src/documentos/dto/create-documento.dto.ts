@@ -33,6 +33,7 @@ export class CreateDocumentoDto {
     example: 'base64',
     description: 'Conteúdo textual do documento. Não é registrado em logs.',
   })
+  @Transform(trimString)
   @IsString()
   @IsNotEmpty()
   Documento!: string;
