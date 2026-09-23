@@ -74,6 +74,7 @@ GET /exames/:accessionNumber
 - [Decisões técnicas](docs/decisoes-tecnicas.md)
 - [Níveis de entrega](docs/niveis-de-entrega.md)
 - [Modelo de dados](docs/modelo-dados.md)
+- [Roteiro auditável de conferência](docs/roteiro-auditoria.md)
 
 ## Princípios da solução
 

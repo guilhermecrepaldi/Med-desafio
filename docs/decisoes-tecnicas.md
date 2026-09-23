@@ -117,6 +117,15 @@ Esses pontos permanecem visíveis para que a implementação não escolha uma
 regra silenciosamente. O enunciado original continua soberano quando houver
 uma definição explícita.
 
+## Exemplos do enunciado
+
+O exemplo de Pedido usa `CodigoPedido = 616`, enquanto o exemplo isolado de
+Documento usa `CodigoPedido = 615`. Como a regra exige que Documento se
+vincule a um Pedido pelo mesmo código, esses exemplos são tratados como
+ilustrações independentes, sem alterar `docs/desafio.md`. Os testes de
+integração usarão valores consistentes entre Pedido e Documento para validar o
+vínculo.
+
 ## Escopo consciente
 
 Não serão adicionados Kafka, Redis, AWS ou outros componentes apenas para demonstrar tecnologia.
