@@ -295,7 +295,7 @@ cp .env.example .env
 
 | Variável | Padrão | Finalidade |
 | --- | --- | --- |
-| `PORT` | `3000` | Porta HTTP. |
+| `PORT` | `3000` | Porta HTTP local; no Compose, porta publicada no host. |
 | `DB_HOST` | `localhost` | Host PostgreSQL. |
 | `DB_PORT` | `5432` | Porta PostgreSQL. |
 | `DB_USERNAME` | `postgres` | Usuário do banco. |
@@ -325,7 +325,7 @@ npm run start:dev
 Para usar somente o banco do Compose no desenvolvimento local:
 
 ```bash
-docker compose up -d db
+docker compose up -d --wait db
 npm run migration:run
 npm run start:dev
 ```
@@ -346,13 +346,13 @@ docker compose up --build
 ```
 
 O serviço `api` aguarda o healthcheck do banco e inicializa com
-`RUN_MIGRATIONS_ON_START=true`, aplicando migrations no boot. A API usa a
-porta `PORT` (3000 por padrão); o PostgreSQL usa `DB_PORT` (5432 por
-padrão).
+`RUN_MIGRATIONS_ON_START=true`, aplicando migrations no boot. Dentro do
+container, a API sempre usa a porta `3000`; `PORT` define a porta publicada no
+host. O PostgreSQL usa `DB_PORT` (5432 por padrão).
 
 ```bash
 # segundo plano e inspeção
-docker compose up --build -d
+docker compose up --build -d --wait
 docker compose ps
 
 # parar preservando os dados
@@ -375,11 +375,12 @@ redação de logs. Os E2E inicializam a aplicação Nest, exercitam sua API por
 Supertest e usam PostgreSQL real; migrations são aplicadas no banco de teste e
 as tabelas são limpas entre cenários.
 
-O serviço `db` do Compose cria também `med_desafio_test` para E2E. Antes
-de rodá-los localmente:
+O serviço `db` do Compose cria também `med_desafio_test` para E2E. Esse é o
+valor que deve ser mantido para `E2E_DB_DATABASE` quando usar o Compose; outro
+nome exige criar o banco de teste manualmente. Antes de rodá-los localmente:
 
 ```bash
-docker compose up -d db
+docker compose up -d --wait db
 npm run test:e2e
 ```
 

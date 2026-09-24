@@ -22,7 +22,8 @@ services:
       context: .
     environment:
       NODE_ENV: production
-      PORT: ${PORT:-3000}
+      # A porta interna é fixa; PORT controla somente a porta publicada no host.
+      PORT: 3000
       DB_HOST: db
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME:-postgres}

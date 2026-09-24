@@ -23,7 +23,7 @@ neste ambiente; código versionado ou teste escrito não substitui execução.
 
 ## Pendente de validação Docker
 
-- `docker compose up --build`;
+- `docker compose up --build -d --wait`;
 - PostgreSQL vazio e aplicação real das migrations;
 - E2E contra PostgreSQL: `npm run test:e2e` foi executado e carregou os 13 cenários, mas todos ficaram bloqueados antes de iniciar por `ECONNREFUSED 127.0.0.1:5432`;
 - smoke HTTP completo;
@@ -62,7 +62,7 @@ abaixo.
 ## Verificação pendente quando Docker estiver acessível
 
 ```bash
-docker compose up --build -d
+docker compose up --build -d --wait
 docker compose ps
 npm run migration:show
 npm run test:e2e

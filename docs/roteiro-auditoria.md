@@ -215,7 +215,7 @@ npm run format:check
 npm test
 npm run build
 docker compose config
-docker compose up --build -d
+docker compose up --build -d --wait
 docker compose ps
 npm run migration:show
 npm run test:e2e
@@ -228,7 +228,7 @@ isolado e, somente se puder descartar o volume daquele ambiente, execute:
 
 ~~~bash
 docker compose down -v
-docker compose up --build -d
+docker compose up --build -d --wait
 docker compose ps
 npm run test:e2e
 ~~~
