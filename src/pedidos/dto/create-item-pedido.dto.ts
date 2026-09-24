@@ -8,14 +8,23 @@ import {
 } from '../../common/validation/value-transformers';
 
 export class CreateItemPedidoDto {
-  @ApiProperty({ example: 930, description: 'Identificador do item dentro do pedido.' })
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { type: 'number' }],
+    example: '930',
+    description: 'Identificador do item dentro do pedido. Aceita texto ou número e é normalizado.',
+  })
   @Transform(normalizeExternalIdentifier)
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
   CodigoItemPedido!: string;
 
-  @ApiProperty({ example: '930', description: 'Chave de correlação com o exame recebido.' })
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { type: 'number' }],
+    example: '930',
+    description:
+      'Chave de correlação com o exame recebido. Aceita texto ou número e é normalizada.',
+  })
   @Transform(normalizeExternalIdentifier)
   @IsString()
   @IsNotEmpty()

@@ -17,7 +17,11 @@ import {
 import { CreateItemPedidoDto } from './create-item-pedido.dto';
 
 export class CreatePedidoDto {
-  @ApiProperty({ example: 616, description: 'Código externo único do pedido.' })
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { type: 'number' }],
+    example: '616',
+    description: 'Código externo único. Aceita texto ou número e é normalizado.',
+  })
   @Transform(normalizeExternalIdentifier)
   @IsString()
   @IsNotEmpty()
@@ -31,7 +35,12 @@ export class CreatePedidoDto {
   @MaxLength(255)
   NomePaciente!: string;
 
-  @ApiProperty({ example: '19970601', description: 'Data no formato YYYYMMDD.' })
+  @ApiProperty({
+    oneOf: [{ type: 'string', pattern: '^\\d{8}$' }, { type: 'number' }],
+    example: '19970601',
+    description:
+      'Data no formato YYYYMMDD. Aceita texto ou número e é normalizada antes da validação.',
+  })
   @Transform(normalizeExternalIdentifier)
   @IsString()
   @Matches(/^\d{8}$/, { message: 'DataNascimento deve usar o formato YYYYMMDD.' })
@@ -44,7 +53,11 @@ export class CreatePedidoDto {
   @MaxLength(20)
   Sexo!: string;
 
-  @ApiProperty({ example: 104 })
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { type: 'number' }],
+    example: '104',
+    description: 'Código de unidade. Aceita texto ou número e é normalizado.',
+  })
   @Transform(normalizeExternalIdentifier)
   @IsString()
   @IsNotEmpty()

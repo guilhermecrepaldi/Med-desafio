@@ -108,10 +108,6 @@ export class PedidosService {
       });
     }
 
-    if (result.summary.pedidosIntegrados > 0) {
-      this.logger.info('pedido.integrado', { codigoPedido: result.pedido.codigoPedido });
-    }
-
     return {
       created: result.created,
       pedido: this.toResponse(result.pedido),
@@ -221,6 +217,7 @@ export class PedidosService {
       documentosResolvidos: summary.documentosResolvidos,
       pedidosIntegrados: summary.pedidosIntegrados,
       vinculosCandidatos: summary.vinculosCandidatos,
+      vinculosCriados: summary.vinculosCriados,
     };
   }
 }

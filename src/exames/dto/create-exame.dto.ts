@@ -8,7 +8,11 @@ import {
 } from '../../common/validation/value-transformers';
 
 export class CreateExameDto {
-  @ApiProperty({ example: '930' })
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { type: 'number' }],
+    example: '930',
+    description: 'Chave de correlação. Aceita texto ou número e é normalizada.',
+  })
   @Transform(normalizeExternalIdentifier)
   @IsString()
   @IsNotEmpty()

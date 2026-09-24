@@ -118,6 +118,10 @@ cobertas pelo README e pelos E2E:
   <code>409 Conflict</code>, sem alterar silenciosamente a primeira mensagem;
 - reenvio idêntico de Exame com o mesmo accession é idempotente e dispara
   reconciliação novamente; conteúdo divergente retorna <code>409 Conflict</code>;
+- quando um reenvio idêntico já não produz transição de estado nem vínculo
+  novo, a reconciliação não executa atualização redundante e preserva
+  <code>UpdatedAt</code>; uma pendência realmente resolvida continua atualizando
+  esse campo;
 - Documento repetido sempre retorna <code>409 Conflict</code>, porque a regra
   original proíbe a combinação de códigos duplicada;
 - <code>integrado</code> significa existência de ao menos uma correlação, não
@@ -136,8 +140,11 @@ fora do escopo.
 O middleware reutiliza um <code>x-request-id</code> seguro ou gera um UUID e
 o devolve na resposta. Logs JSON incluem esse identificador e eventos de
 recebimento, criação/reuso/atualização, item adicionado, reconciliação,
-vínculo, integração e falhas. O logger não registra corpo HTTP nem conteúdo
-Base64 de Documento.
+vínculo, integração e falhas. O evento de vínculo registra os códigos de
+Pedido e Documento e o <code>AccessionNumber</code> somente para vínculos
+efetivamente inseridos. O logger não registra corpo HTTP nem conteúdo Base64
+de Documento. O OpenAPI também documenta o header de entrada e resposta para
+esse rastreamento.
 
 ## Exemplos do enunciado
 

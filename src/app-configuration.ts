@@ -1,7 +1,7 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-import { GlobalExceptionFilter, HttpLoggingInterceptor } from './common';
+import { GlobalExceptionFilter, HttpLoggingInterceptor, REQUEST_ID_SCHEMA } from './common';
 
 export function configureApplication(app: INestApplication): void {
   app.useGlobalPipes(
@@ -24,6 +24,14 @@ export function configureApplication(app: INestApplication): void {
     .addTag('Documentos')
     .addTag('Exames')
     .addTag('Operação')
+    .addGlobalParameters({
+      name: 'x-request-id',
+      in: 'header',
+      required: false,
+      description:
+        'Identificador opcional de correlação. Se ausente ou inválido, a API gera um UUID e o devolve na resposta.',
+      schema: REQUEST_ID_SCHEMA,
+    })
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, swaggerDocument, {

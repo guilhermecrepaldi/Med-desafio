@@ -12,8 +12,14 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { errorResponseExample, REQUEST_ID_RESPONSE_HEADERS } from '../common';
 import { ErrorResponseDto } from '../common/dto';
-import { CreateDocumentoDto, DocumentoResponseDto } from './dto';
+import {
+  CreateDocumentoDto,
+  DOCUMENTO_RESPONSE_INTEGRATED_EXAMPLE,
+  DOCUMENTO_RESPONSE_PENDING_EXAMPLE,
+  DocumentoResponseDto,
+} from './dto';
 import { DocumentosService } from './documentos.service';
 
 @ApiTags('Documentos')
@@ -36,10 +42,32 @@ export class DocumentosController {
       },
     },
   })
-  @ApiCreatedResponse({ type: DocumentoResponseDto, description: 'Documento criado.' })
-  @ApiBadRequestResponse({ type: ErrorResponseDto })
-  @ApiConflictResponse({ type: ErrorResponseDto, description: 'Documento duplicado.' })
-  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
+  @ApiCreatedResponse({
+    type: DocumentoResponseDto,
+    description: 'Documento criado.',
+    example: DOCUMENTO_RESPONSE_PENDING_EXAMPLE,
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(400, '/documentos', ['Documento should not be empty']),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiConflictResponse({
+    type: ErrorResponseDto,
+    description: 'Documento duplicado.',
+    example: errorResponseExample(
+      409,
+      '/documentos',
+      'Já existe documento com CodigoDocumento e CodigoPedido informados.',
+    ),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiInternalServerErrorResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(500, '/documentos', 'Erro interno do servidor.'),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
   async create(@Body() dto: CreateDocumentoDto): Promise<DocumentoResponseDto> {
     const result = await this.documentosService.receive(dto);
 
@@ -49,10 +77,35 @@ export class DocumentosController {
   @Get(':codigoPedido')
   @ApiOperation({ summary: 'Lista os documentos de um pedido pelo CódigoPedido.' })
   @ApiParam({ name: 'codigoPedido', example: '616' })
-  @ApiOkResponse({ type: DocumentoResponseDto, isArray: true })
-  @ApiBadRequestResponse({ type: ErrorResponseDto })
-  @ApiNotFoundResponse({ type: ErrorResponseDto })
-  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
+  @ApiOkResponse({
+    type: DocumentoResponseDto,
+    isArray: true,
+    example: [DOCUMENTO_RESPONSE_INTEGRATED_EXAMPLE],
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(
+      400,
+      '/documentos/',
+      'codigoPedido deve ser um identificador não vazio de até 100 caracteres.',
+    ),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(
+      404,
+      '/documentos/616',
+      'Nenhum documento foi encontrado para o pedido informado.',
+    ),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiInternalServerErrorResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(500, '/documentos/616', 'Erro interno do servidor.'),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
   async findByCodigoPedido(
     @Param('codigoPedido') codigoPedido: string,
   ): Promise<DocumentoResponseDto[]> {

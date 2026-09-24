@@ -20,9 +20,26 @@ neste ambiente; código versionado ou teste escrito não substitui execução.
 | Swagger/configuração                                            | PASS executado  | `/docs-json` retornou `200` e publicou as seis rotas obrigatórias, além de `/health`.                                                                                                                       |
 | logs, erros e revisão de código                                 | PASS executado  | Logs JSON emitiram eventos de reconciliação; `requestId` foi preservado no smoke; o conteúdo Base64 do documento não apareceu nos logs.                                                                     |
 | `docker compose config` e `docker compose up --build -d --wait` | PASS executado  | Imagem construída, API e PostgreSQL saudáveis, migrations no boot.                                                                                                                                          |
-| `npm run test:e2e`                                              | PASS executado  | 1 suíte, 13 testes contra PostgreSQL real.                                                                                                                                                                  |
+| `npm run test:e2e`                                              | PASS executado  | 1 suíte, 14 testes contra PostgreSQL real, incluindo contrato OpenAPI e no-op idempotente.                                                                                                                  |
 | smoke HTTP                                                      | PASS executado  | Pedido pendente, Documento pendente, Exame, vínculo, reenvio com item novo e Documento duplicado `409`.                                                                                                     |
 | instalação limpa                                                | PASS executado  | Clone remoto, `npm ci`, Compose isolado, migrations, health, Swagger, POST/GET e E2E concluídos.                                                                                                            |
+
+## Revisão de Nível 2 — contratos e idempotência
+
+Após uma revisão independente do OpenAPI, foram corrigidos os pontos abaixo e
+revalidados no PostgreSQL real e no container Docker:
+
+- cada resposta Swagger de sucesso e erro tem exemplo completo e documenta o
+  header de resposta `x-request-id`;
+- `x-request-id` é parâmetro global opcional no OpenAPI;
+- identificadores de entrada expõem `oneOf(string, number)`, coerente com a
+  normalização executada pela API; respostas permanecem texto;
+- reenvios que já são no-op não atualizam `UpdatedAt` de Pedido ou Documento;
+- o evento `documento.vinculado` contém `CodigoPedido`, `CodigoDocumento` e
+  `AccessionNumber` apenas quando um vínculo é inserido.
+
+O E2E de Swagger verifica esses elementos em `/docs-json`, e o smoke Docker
+confirmou timestamp estável e um único vínculo após reenvios idênticos.
 
 ## Nota de ambiente
 
@@ -34,28 +51,28 @@ padrão.
 
 ## Matriz de requisitos
 
-| Requisito do desafio        | Implementação                                             | Teste/evidência                          | Estado atual   |
-| --------------------------- | --------------------------------------------------------- | ---------------------------------------- | -------------- |
-| Node.js e API REST          | NestJS em `src/`, controllers REST.                       | `npm run build`.                         | PASS executado |
-| Persistência PostgreSQL     | TypeORM, entidades e DataSource.                          | Migration aplicada em PostgreSQL vazio.  | PASS           |
-| Pedido único                | `UQ_pedidos_codigo_pedido`.                               | E2E: Pedido/reenvio.                     | PASS           |
-| Itens sem duplicidade       | `UQ_itens_pedido_pedido_codigo`.                          | E2E e smoke: item novo no reenvio.       | PASS           |
-| Correlação por accession    | `ReconciliationService`.                                  | E2E nas ordens previstas e smoke.        | PASS           |
-| Exame único                 | `UQ_exames_accession_number`.                             | E2E: reenvio idêntico/divergente.        | PASS           |
-| Documento único             | `UQ_documentos_codigo_pedido_codigo_documento`; `409`.    | E2E e smoke: duplicidade.                | PASS           |
-| Documento–Exame N:N         | PK composta em `documentos_exames`.                       | E2E, smoke e consulta física do vínculo. | PASS           |
-| Seis endpoints obrigatórios | Controllers em `pedidos`, `documentos`, `exames`.         | Swagger, E2E e smoke.                    | PASS           |
-| DTOs e validação            | `class-validator`, `ValidationPipe`.                      | Unitários e E2E 400.                     | PASS           |
-| Erros padronizados          | `GlobalExceptionFilter`.                                  | E2E 400/404/409/500 e smoke 409.         | PASS           |
-| Logs                        | `StructuredLogger` e interceptor HTTP.                    | Unitário de redação e logs do container. | PASS           |
-| requestId                   | middleware `x-request-id`.                                | Unitário, E2E e smoke de duplicidade.    | PASS           |
-| Swagger                     | `configureApplication` e decorators nos controllers/DTOs. | `/docs-json` HTTP 200.                   | PASS           |
-| Docker/Compose              | `Dockerfile`, `docker-compose.yml`.                       | Build, serviços e healthchecks reais.    | PASS           |
-| Migrations, sem synchronize | Migration TypeORM; `synchronize: false`.                  | Boot Compose e `migration:show`.         | PASS           |
-| Transações                  | `DataSource.transaction` em todos os POSTs.               | E2E de rollback.                         | PASS           |
-| Testes Jest/Supertest       | Unitários em `src/**`; E2E em `test/`.                    | 4 suítes/10 unitários e 1 suíte/13 E2E.  | PASS           |
-| Lint/formato/build          | ESLint, Prettier e Nest build.                            | comandos acima.                          | PASS executado |
-| README                      | [README](../README.md).                                   | revisão documental.                      | PASS revisado  |
+| Requisito do desafio        | Implementação                                           | Teste/evidência                                                       | Estado atual   |
+| --------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------- | -------------- |
+| Node.js e API REST          | NestJS em `src/`, controllers REST.                     | `npm run build`.                                                      | PASS executado |
+| Persistência PostgreSQL     | TypeORM, entidades e DataSource.                        | Migration aplicada em PostgreSQL vazio.                               | PASS           |
+| Pedido único                | `UQ_pedidos_codigo_pedido`.                             | E2E: Pedido/reenvio.                                                  | PASS           |
+| Itens sem duplicidade       | `UQ_itens_pedido_pedido_codigo`.                        | E2E e smoke: item novo no reenvio.                                    | PASS           |
+| Correlação por accession    | `ReconciliationService`.                                | E2E nas ordens previstas e smoke.                                     | PASS           |
+| Exame único                 | `UQ_exames_accession_number`.                           | E2E: reenvio idêntico/divergente.                                     | PASS           |
+| Documento único             | `UQ_documentos_codigo_pedido_codigo_documento`; `409`.  | E2E e smoke: duplicidade.                                             | PASS           |
+| Documento–Exame N:N         | PK composta em `documentos_exames`.                     | E2E, smoke e consulta física do vínculo.                              | PASS           |
+| Seis endpoints obrigatórios | Controllers em `pedidos`, `documentos`, `exames`.       | Swagger, E2E e smoke.                                                 | PASS           |
+| DTOs e validação            | `class-validator`, `ValidationPipe`.                    | Unitários e E2E 400.                                                  | PASS           |
+| Erros padronizados          | `GlobalExceptionFilter`.                                | E2E 400/404/409/500 e smoke 409.                                      | PASS           |
+| Logs                        | `StructuredLogger` e interceptor HTTP.                  | Unitário de redação; Docker registrou contexto de vínculo sem Base64. | PASS           |
+| requestId                   | middleware e parâmetro/resposta Swagger `x-request-id`. | Unitário, E2E, Swagger e smoke.                                       | PASS           |
+| Swagger                     | Decorators, schemas coerentes e exemplos completos.     | E2E de `/docs-json` e inspeção Docker.                                | PASS           |
+| Docker/Compose              | `Dockerfile`, `docker-compose.yml`.                     | Build, serviços e healthchecks reais.                                 | PASS           |
+| Migrations, sem synchronize | Migration TypeORM; `synchronize: false`.                | Boot Compose e `migration:show`.                                      | PASS           |
+| Transações                  | `DataSource.transaction` em todos os POSTs.             | E2E de rollback.                                                      | PASS           |
+| Testes Jest/Supertest       | Unitários em `src/**`; E2E em `test/`.                  | 4 suítes/10 unitários e 1 suíte/14 E2E.                               | PASS           |
+| Lint/formato/build          | ESLint, Prettier e Nest build.                          | comandos acima.                                                       | PASS executado |
+| README                      | [README](../README.md).                                 | revisão documental.                                                   | PASS revisado  |
 
 ## Reprodução da validação operacional
 

@@ -279,6 +279,23 @@ describe('Med-desafio (e2e)', () => {
       .expect(409);
   });
 
+  it('mantém timestamps quando um reenvio idêntico não produz mudança de estado', async () => {
+    const api = request(app.getHttpServer());
+
+    await api.post('/exames').send(exame()).expect(201);
+    const pedidoIntegrado = await api.post('/pedidos').send(pedido()).expect(201);
+    const documentoIntegrado = await api.post('/documentos').send(documento()).expect(201);
+
+    const replayPedido = await api.post('/pedidos').send(pedido()).expect(200);
+    const replayExame = await api.post('/exames').send(exame()).expect(200);
+    const documentosDepoisDoReplay = await api.get('/documentos/616').expect(200);
+
+    expect(replayPedido.body.UpdatedAt).toBe(pedidoIntegrado.body.UpdatedAt);
+    expect(replayExame.body.UpdatedAt).toBeDefined();
+    expect(documentosDepoisDoReplay.body[0].UpdatedAt).toBe(documentoIntegrado.body.UpdatedAt);
+    expect(documentosDepoisDoReplay.body[0].Exames).toHaveLength(1);
+  });
+
   it('padroniza erros de validação e GET inexistente', async () => {
     const api = request(app.getHttpServer());
 
@@ -307,11 +324,98 @@ describe('Med-desafio (e2e)', () => {
     await api.get('/exames/inexistente').expect(404);
   });
 
-  it('expõe healthcheck e Swagger para operação e auditoria', async () => {
+  it('expõe healthcheck e contratos Swagger completos para operação e auditoria', async () => {
     const api = request(app.getHttpServer());
 
     await api.get('/health').expect(200).expect({ status: 'ok' });
-    await api.get('/docs-json').expect(200).expect('content-type', /json/);
+    const swagger = await api.get('/docs-json').expect(200).expect('content-type', /json/);
+    const pedidoPost = swagger.body.paths['/pedidos'].post;
+    const documentosGet = swagger.body.paths['/documentos/{codigoPedido}'].get;
+    const operacoesDocumentadas = [
+      { operation: pedidoPost, statuses: ['200', '201', '400', '409', '500'] },
+      {
+        operation: swagger.body.paths['/pedidos/{codigoPedido}'].get,
+        statuses: ['200', '400', '404', '500'],
+      },
+      {
+        operation: swagger.body.paths['/documentos'].post,
+        statuses: ['201', '400', '409', '500'],
+      },
+      { operation: documentosGet, statuses: ['200', '400', '404', '500'] },
+      {
+        operation: swagger.body.paths['/exames'].post,
+        statuses: ['200', '201', '400', '409', '500'],
+      },
+      {
+        operation: swagger.body.paths['/exames/{accessionNumber}'].get,
+        statuses: ['200', '400', '404', '500'],
+      },
+      { operation: swagger.body.paths['/health'].get, statuses: ['200', '503'] },
+    ];
+
+    for (const { operation, statuses } of operacoesDocumentadas) {
+      expect(operation.parameters).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            in: 'header',
+            name: 'x-request-id',
+            required: false,
+            schema: expect.objectContaining({ type: 'string' }),
+          }),
+        ]),
+      );
+
+      for (const status of statuses) {
+        expect(operation.responses[status]).toMatchObject({
+          headers: {
+            'x-request-id': {
+              schema: { type: 'string' },
+            },
+          },
+        });
+        expect(operation.responses[status].content['application/json'].example).toBeDefined();
+      }
+    }
+
+    expect(pedidoPost.responses['201']).toMatchObject({
+      content: {
+        'application/json': {
+          example: expect.objectContaining({ CodigoPedido: '616', Integrado: false }),
+        },
+      },
+    });
+    expect(pedidoPost.responses['409'].content['application/json'].example).toMatchObject({
+      statusCode: 409,
+      errorCode: 'HTTP_409',
+    });
+    expect(documentosGet.responses['200'].content['application/json'].example).toEqual([
+      expect.objectContaining({ CodigoDocumento: '251', Integrado: true }),
+    ]);
+    const identificadoresDeEntrada = [
+      ['CreatePedidoDto', 'CodigoPedido'],
+      ['CreatePedidoDto', 'DataNascimento'],
+      ['CreatePedidoDto', 'CodUnidade'],
+      ['CreateItemPedidoDto', 'CodigoItemPedido'],
+      ['CreateItemPedidoDto', 'AccessionNumber'],
+      ['CreateDocumentoDto', 'CodigoDocumento'],
+      ['CreateDocumentoDto', 'CodigoPedido'],
+      ['CreateExameDto', 'AccessionNumber'],
+    ];
+
+    for (const [schemaName, propertyName] of identificadoresDeEntrada) {
+      expect(swagger.body.components.schemas[schemaName].properties[propertyName].oneOf).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ type: 'string' }),
+          expect.objectContaining({ type: 'number' }),
+        ]),
+      );
+    }
+
+    expect(swagger.body.components.schemas.PedidoResponseDto.properties.CodigoPedido).toMatchObject(
+      {
+        type: 'string',
+      },
+    );
   });
 
   it('faz rollback do pedido quando a reconciliação falha dentro da transação', async () => {

@@ -9,6 +9,9 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { DataSource } from 'typeorm';
 
+import { errorResponseExample, REQUEST_ID_RESPONSE_HEADERS } from '../common';
+import { ErrorResponseDto } from '../common/dto';
+
 class HealthResponseDto {
   @ApiProperty({ example: 'ok' })
   status!: 'ok';
@@ -24,8 +27,17 @@ export class HealthController {
 
   @Get()
   @ApiOperation({ summary: 'Verifica se a API e o banco estão acessíveis.' })
-  @ApiOkResponse({ type: HealthResponseDto })
-  @ApiServiceUnavailableResponse({ description: 'Banco de dados indisponível.' })
+  @ApiOkResponse({
+    type: HealthResponseDto,
+    example: { status: 'ok' },
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiServiceUnavailableResponse({
+    type: ErrorResponseDto,
+    description: 'Banco de dados indisponível.',
+    example: errorResponseExample(503, '/health', 'Banco de dados indisponível.'),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
   async check(): Promise<HealthResponseDto> {
     try {
       await this.dataSource.query('SELECT 1');

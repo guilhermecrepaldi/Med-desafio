@@ -137,6 +137,7 @@ export class DocumentosService {
       documentosResolvidos: summary.documentosResolvidos,
       pedidosIntegrados: summary.pedidosIntegrados,
       vinculosCandidatos: summary.vinculosCandidatos,
+      vinculosCriados: summary.vinculosCriados,
     };
   }
 }

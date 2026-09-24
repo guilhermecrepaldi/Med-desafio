@@ -13,8 +13,14 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 
+import { errorResponseExample, REQUEST_ID_RESPONSE_HEADERS } from '../common';
 import { ErrorResponseDto } from '../common/dto';
-import { CreateExameDto, ExameResponseDto } from './dto';
+import {
+  CreateExameDto,
+  EXAME_RESPONSE_INTEGRATED_EXAMPLE,
+  EXAME_RESPONSE_PENDING_EXAMPLE,
+  ExameResponseDto,
+} from './dto';
 import { ExamesService } from './exames.service';
 
 @ApiTags('Exames')
@@ -37,11 +43,37 @@ export class ExamesController {
       },
     },
   })
-  @ApiCreatedResponse({ type: ExameResponseDto, description: 'Exame criado.' })
-  @ApiOkResponse({ type: ExameResponseDto, description: 'Reenvio idempotente de exame existente.' })
-  @ApiBadRequestResponse({ type: ErrorResponseDto })
-  @ApiConflictResponse({ type: ErrorResponseDto })
-  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
+  @ApiCreatedResponse({
+    type: ExameResponseDto,
+    description: 'Exame criado.',
+    example: EXAME_RESPONSE_PENDING_EXAMPLE,
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiOkResponse({
+    type: ExameResponseDto,
+    description: 'Reenvio idempotente de exame existente.',
+    example: EXAME_RESPONSE_INTEGRATED_EXAMPLE,
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(400, '/exames', ['AccessionNumber should not be empty']),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiConflictResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(
+      409,
+      '/exames',
+      'Exame já existe com dados divergentes para o mesmo AccessionNumber.',
+    ),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiInternalServerErrorResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(500, '/exames', 'Erro interno do servidor.'),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
   async create(
     @Body() dto: CreateExameDto,
     @Res({ passthrough: true }) response: Response,
@@ -55,10 +87,30 @@ export class ExamesController {
   @Get(':accessionNumber')
   @ApiOperation({ summary: 'Consulta um exame pelo AccessionNumber.' })
   @ApiParam({ name: 'accessionNumber', example: '930' })
-  @ApiOkResponse({ type: ExameResponseDto })
-  @ApiBadRequestResponse({ type: ErrorResponseDto })
-  @ApiNotFoundResponse({ type: ErrorResponseDto })
-  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
+  @ApiOkResponse({
+    type: ExameResponseDto,
+    example: EXAME_RESPONSE_INTEGRATED_EXAMPLE,
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(
+      400,
+      '/exames/',
+      'accessionNumber deve ser um identificador não vazio de até 100 caracteres.',
+    ),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(404, '/exames/930', 'Exame não encontrado.'),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
+  @ApiInternalServerErrorResponse({
+    type: ErrorResponseDto,
+    example: errorResponseExample(500, '/exames/930', 'Erro interno do servidor.'),
+    headers: REQUEST_ID_RESPONSE_HEADERS,
+  })
   async findOne(@Param('accessionNumber') accessionNumber: string): Promise<ExameResponseDto> {
     return this.examesService.findByAccession(accessionNumber);
   }

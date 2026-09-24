@@ -131,6 +131,9 @@ As premissas abaixo evitam alteração silenciosa de dados:
 
 A PK composta de `documentos_exames`, somada à inserção idempotente, impede
 vínculos duplicados mesmo se a reconciliação for executada mais de uma vez.
+Quando um reenvio idêntico já não tem nenhuma pendência para resolver, ele não
+altera `UpdatedAt`. Se a reconciliação efetivamente integrar um Pedido ou
+Documento pendente, a atualização do timestamp é legítima.
 
 ## API
 
@@ -139,8 +142,9 @@ vínculos duplicados mesmo se a reconciliação for executada mais de uma vez.
 - OpenAPI JSON: [http://localhost:3000/docs-json](http://localhost:3000/docs-json)
 - Healthcheck: [http://localhost:3000/health](http://localhost:3000/health)
 
-Os campos externos preservam a capitalização do enunciado. Identificadores são
-retornados como strings para preservar sua representação.
+Os campos externos preservam a capitalização do enunciado. Identificadores de
+entrada aceitam texto ou número e são normalizados; as respostas sempre usam
+texto para preservar sua representação, incluindo zeros à esquerda.
 
 | Método e rota                   | Sucesso                                       | Corpo                        |
 | ------------------------------- | --------------------------------------------- | ---------------------------- |
@@ -152,8 +156,10 @@ retornados como strings para preservar sua representação.
 | `GET /exames/:accessionNumber`  | `200 OK`                                      | `ExameResponse`              |
 | `GET /health`                   | `200 OK`                                      | `{ "status": "ok" }`         |
 
-O Swagger descreve DTOs, exemplos, status e respostas de erro de todas as
-rotas.
+O Swagger descreve DTOs, os dois formatos aceitos para identificadores,
+exemplos completos de requests e responses de sucesso/erro, status HTTP e o
+header opcional `x-request-id`. Esse header também aparece nas respostas para
+rastrear a requisição de ponta a ponta.
 
 ### Requests de referência
 
@@ -271,7 +277,9 @@ Cada requisição recebe `x-request-id`:
 - logs JSON estruturados incluem esse identificador.
 
 Os eventos registram recebimento/criação/reuso de recursos, reconciliação,
-vínculos, resultado HTTP e erros. O logger não registra o corpo HTTP e redige
+vínculos, resultado HTTP e erros. Cada vínculo efetivamente criado registra
+`CodigoPedido`, `CodigoDocumento` e `AccessionNumber`; reenvios que não criam
+vínculo não repetem esse evento. O logger não registra o corpo HTTP e redige
 conteúdo de documento e outros campos sensíveis quando recebidos como
 metadados.
 
@@ -402,8 +410,9 @@ npm run test:e2e
 
 Os E2E cobrem Pedido pendente, Exame antes de Pedido, Documento antes de
 Pedido, Documento posterior a Pedido integrado, reenvio com Item novo,
-Documento duplicado, múltiplos documentos/exames, idempotência de Exame,
-erros de validação, GET inexistente, health/Swagger e rollback de transação.
+Documento duplicado, múltiplos documentos/exames, idempotência de Pedido e
+Exame sem alteração de timestamp em no-op, erros de validação, GET inexistente,
+health/Swagger com exemplos completos e rollback de transação.
 
 O workflow [CI](.github/workflows/ci.yml) repete lint, formatação, testes
 unitários, E2E contra PostgreSQL e build em pushes e pull requests para

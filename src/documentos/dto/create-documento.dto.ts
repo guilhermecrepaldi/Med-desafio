@@ -8,14 +8,23 @@ import {
 } from '../../common/validation/value-transformers';
 
 export class CreateDocumentoDto {
-  @ApiProperty({ example: 251 })
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { type: 'number' }],
+    example: '251',
+    description: 'Código externo do documento. Aceita texto ou número e é normalizado.',
+  })
   @Transform(normalizeExternalIdentifier)
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
   CodigoDocumento!: string;
 
-  @ApiProperty({ example: 616, description: 'Código do pedido ao qual o documento se refere.' })
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { type: 'number' }],
+    example: '616',
+    description:
+      'Código do pedido ao qual o documento se refere. Aceita texto ou número e é normalizado.',
+  })
   @Transform(normalizeExternalIdentifier)
   @IsString()
   @IsNotEmpty()

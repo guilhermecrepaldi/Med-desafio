@@ -14,6 +14,7 @@ export interface ReconciliationSummary {
   pedidosIntegrados: number;
   pedidosReconciliados: number;
   vinculosCandidatos: number;
+  vinculosCriados: number;
 }
 
 const EMPTY_SUMMARY: ReconciliationSummary = {
@@ -21,6 +22,7 @@ const EMPTY_SUMMARY: ReconciliationSummary = {
   pedidosIntegrados: 0,
   pedidosReconciliados: 0,
   vinculosCandidatos: 0,
+  vinculosCriados: 0,
 };
 
 @Injectable()
@@ -165,13 +167,18 @@ export class ReconciliationService {
       (pedido) => (examesPorPedido.get(pedido.id)?.length ?? 0) > 0,
     );
 
-    if (pedidosIntegrados.length > 0) {
-      await pedidoRepository
+    const pedidosParaIntegrar = pedidosIntegrados.filter((pedido) => !pedido.integrado);
+    let pedidosIntegradosAgora = 0;
+
+    if (pedidosParaIntegrar.length > 0) {
+      const updateResult = await pedidoRepository
         .createQueryBuilder()
         .update(PedidoEntity)
         .set({ integrado: true })
-        .whereInIds(pedidosIntegrados.map((pedido) => pedido.id))
+        .whereInIds(pedidosParaIntegrar.map((pedido) => pedido.id))
+        .andWhere('integrado = FALSE')
         .execute();
+      pedidosIntegradosAgora = updateResult.affected ?? 0;
     }
 
     const documentosPorPedido = new Map<string, DocumentoEntity[]>();
@@ -196,29 +203,51 @@ export class ReconciliationService {
       );
     });
 
+    const documentosPorId = new Map(documentos.map((documento) => [documento.id, documento]));
+    const examesPorId = new Map(exames.map((exame) => [exame.id, exame]));
+    let vinculosCriados: Array<{
+      accessionNumber: string;
+      codigoDocumento: string;
+      codigoPedido: string;
+    }> = [];
+
     if (vinculos.length > 0) {
-      await manager
+      const insertResult = await manager
         .createQueryBuilder()
         .insert()
         .into(DocumentoExameEntity)
         .values(vinculos)
         .orIgnore()
+        .returning(['documentoId', 'exameId'])
         .execute();
 
-      const documentoIdsIntegrados = [...new Set(vinculos.map((vinculo) => vinculo.documentoId))];
-      await documentoRepository
-        .createQueryBuilder()
-        .update(DocumentoEntity)
-        .set({ integrado: true })
-        .whereInIds(documentoIdsIntegrados)
-        .execute();
+      vinculosCriados = this.toCreatedLinkMetadata(insertResult.raw, documentosPorId, examesPorId);
+
+      const documentoIdsParaIntegrar = [
+        ...new Set(
+          vinculos
+            .map((vinculo) => vinculo.documentoId)
+            .filter((documentoId) => documentosPorId.get(documentoId)?.integrado === false),
+        ),
+      ];
+
+      if (documentoIdsParaIntegrar.length > 0) {
+        await documentoRepository
+          .createQueryBuilder()
+          .update(DocumentoEntity)
+          .set({ integrado: true })
+          .whereInIds(documentoIdsParaIntegrar)
+          .andWhere('integrado = FALSE')
+          .execute();
+      }
     }
 
     const summary: ReconciliationSummary = {
       pedidosReconciliados: pedidos.length,
-      pedidosIntegrados: pedidosIntegrados.length,
+      pedidosIntegrados: pedidosIntegradosAgora,
       documentosResolvidos: documentosParaResolver.length,
       vinculosCandidatos: vinculos.length,
+      vinculosCriados: vinculosCriados.length,
     };
 
     this.logger.info('reconciliacao.executada', {
@@ -226,19 +255,65 @@ export class ReconciliationService {
       ...summary,
     });
 
-    if (pedidosIntegrados.length > 0) {
+    if (pedidosIntegradosAgora > 0) {
       this.logger.info('pedido.integrado', {
-        codigosPedido: pedidosIntegrados.map((pedido) => pedido.codigoPedido),
+        codigosPedido: pedidosParaIntegrar.map((pedido) => pedido.codigoPedido),
       });
     }
 
-    if (vinculos.length > 0) {
+    if (vinculosCriados.length > 0) {
       this.logger.info('documento.vinculado', {
-        codigosPedido: codigosUnicos,
-        vinculosCandidatos: vinculos.length,
+        quantidade: vinculosCriados.length,
+        vinculos: vinculosCriados,
       });
     }
 
     return summary;
   }
+
+  private toCreatedLinkMetadata(
+    rawRows: unknown,
+    documentosPorId: ReadonlyMap<string, DocumentoEntity>,
+    examesPorId: ReadonlyMap<string, ExameEntity>,
+  ): Array<{ accessionNumber: string; codigoDocumento: string; codigoPedido: string }> {
+    if (!Array.isArray(rawRows)) {
+      return [];
+    }
+
+    return rawRows.flatMap((row) => {
+      if (!isRecord(row)) {
+        return [];
+      }
+
+      const documentoId = toStringId(row.documento_id);
+      const exameId = toStringId(row.exame_id);
+
+      if (documentoId === undefined || exameId === undefined) {
+        return [];
+      }
+
+      const documento = documentosPorId.get(documentoId);
+      const exame = examesPorId.get(exameId);
+
+      if (documento === undefined || exame === undefined) {
+        return [];
+      }
+
+      return [
+        {
+          codigoPedido: documento.codigoPedidoReferencia,
+          codigoDocumento: documento.codigoDocumento,
+          accessionNumber: exame.accessionNumber,
+        },
+      ];
+    });
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toStringId(value: unknown): string | undefined {
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : undefined;
 }
