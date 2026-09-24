@@ -15,17 +15,17 @@ referência para não transformar uma validação ainda não executada em aprova
 
 ## Legenda de estado
 
-| Marca | Significado |
-| --- | --- |
-| ✅ PASS executado | O comando ou teste foi concluído e seu resultado está registrado na matriz. |
-| 🟡 Implementado, sem execução final | Há código e testes, mas a evidência dependente de ambiente ainda não foi executada. |
-| 🚫 Bloqueado externamente | A validação não pôde ser executada por uma limitação registrada; não equivale a aprovação. |
+| Marca                               | Significado                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ |
+| ✅ PASS executado                   | O comando ou teste foi concluído e seu resultado está registrado na matriz.                |
+| 🟡 Implementado, sem execução final | Há código e testes, mas a evidência dependente de ambiente ainda não foi executada.        |
+| 🚫 Bloqueado externamente           | A validação não pôde ser executada por uma limitação registrada; não equivale a aprovação. |
 
 ## Auditoria 0 — confirmar o estado auditado
 
 Execute estes comandos na raiz do repositório:
 
-~~~bash
+```bash
 git status --short --branch
 git log --oneline -5
 git diff --check
@@ -35,7 +35,7 @@ npm run format:check
 npm test
 npm run build
 docker compose config
-~~~
+```
 
 Confirme que existem, entre outros, os seguintes artefatos:
 
@@ -57,25 +57,25 @@ em execução ou smoke HTTP.
 
 ## Auditoria 1 — rastrear cada requisito do desafio
 
-| ID | Requisito | Evidência atual | Estado atual |
-| --- | --- | --- | --- |
-| RF-01 | Salvar Pedido por <code>CodigoPedido</code>. | <code>PedidosService</code>, entidade e migration; E2E de Pedido/reenvio. | 🟡 Implementado; E2E depende de PostgreSQL. |
-| RF-02 | Adicionar somente ItemPedido novo no reenvio. | Constraint e Cenário D; serviço de Pedido. | 🟡 Implementado; E2E depende de PostgreSQL. |
-| RF-03 | Integrar Pedido por <code>AccessionNumber</code>. | <code>ReconciliationService</code>; Cenários A, B e C. | 🟡 Implementado; E2E depende de PostgreSQL. |
-| RF-04 | Rejeitar Documento duplicado por código + pedido. | Constraint, serviço de Documento e Cenário E. | 🟡 Implementado; E2E depende de PostgreSQL. |
-| RF-05 | Vincular Documento aos Exames aplicáveis do Pedido. | Entidade de associação e <code>ReconciliationService</code>. | 🟡 Implementado; E2E depende de PostgreSQL. |
-| RF-06 | Receber Exame e reconciliar pendências. | Serviço de Exame e <code>ReconciliationService</code>. | 🟡 Implementado; E2E depende de PostgreSQL. |
-| RF-07 | Expor os seis endpoints obrigatórios. | Controllers, DTOs, Swagger e testes E2E. | 🟡 Implementado; smoke HTTP depende da API em execução. |
-| RT-01 | Node.js, REST, persistência, Docker, README, erros, Jest, Swagger e logs. | NestJS, TypeORM, Docker, README, filtro global, testes, Swagger e logs estruturados. | Ver [matriz](auditoria-entrega.md). |
-| RT-02 | PostgreSQL, NestJS, TypeORM, migrations e Compose. | DataSource, migration inicial e Compose. | 🟡 Implementado; execução PostgreSQL bloqueada no ambiente atual. |
-| RT-03 | Não usar cron na primeira versão. | Reconciliação síncrona na escrita, sem scheduler. | ✅ Verificável no código. |
+| ID    | Requisito                                                                 | Evidência atual                                                                      | Estado atual                                                        |
+| ----- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| RF-01 | Salvar Pedido por <code>CodigoPedido</code>.                              | <code>PedidosService</code>, entidade e migration; E2E de Pedido/reenvio.            | ✅ PASS executado; E2E em PostgreSQL real.                          |
+| RF-02 | Adicionar somente ItemPedido novo no reenvio.                             | Constraint e Cenário D; serviço de Pedido.                                           | ✅ PASS executado; E2E e smoke HTTP.                                |
+| RF-03 | Integrar Pedido por <code>AccessionNumber</code>.                         | <code>ReconciliationService</code>; Cenários A, B e C.                               | ✅ PASS executado; E2E nas ordens previstas e smoke HTTP.           |
+| RF-04 | Rejeitar Documento duplicado por código + pedido.                         | Constraint, serviço de Documento e Cenário E.                                        | ✅ PASS executado; E2E e smoke HTTP com <code>409</code>.           |
+| RF-05 | Vincular Documento aos Exames aplicáveis do Pedido.                       | Entidade de associação e <code>ReconciliationService</code>.                         | ✅ PASS executado; E2E, smoke e consulta ao banco.                  |
+| RF-06 | Receber Exame e reconciliar pendências.                                   | Serviço de Exame e <code>ReconciliationService</code>.                               | ✅ PASS executado; E2E em ordens fora de ordem.                     |
+| RF-07 | Expor os seis endpoints obrigatórios.                                     | Controllers, DTOs, Swagger e testes E2E.                                             | ✅ PASS executado; Swagger, E2E e smoke HTTP.                       |
+| RT-01 | Node.js, REST, persistência, Docker, README, erros, Jest, Swagger e logs. | NestJS, TypeORM, Docker, README, filtro global, testes, Swagger e logs estruturados. | ✅ PASS executado; ver [matriz](auditoria-entrega.md).              |
+| RT-02 | PostgreSQL, NestJS, TypeORM, migrations e Compose.                        | DataSource, migration inicial e Compose.                                             | ✅ PASS executado; Compose, migrations e E2E em PostgreSQL real.    |
+| RT-03 | Não usar cron na primeira versão.                                         | Reconciliação síncrona na escrita, sem scheduler.                                    | ✅ PASS executado; verificação de código e fluxos de reconciliação. |
 
 Para conferir as fontes desta tabela:
 
-~~~bash
+```bash
 rg -n "POST /pedidos|POST /documentos|POST /exames|GET /pedidos" README.md docs
 rg -n "cron|ReconciliationService|409 Conflict" docs
-~~~
+```
 
 ## Auditoria 2 — conferir a modelagem e sua materialização no banco
 
@@ -88,23 +88,23 @@ Leia, nesta ordem:
 
 Confirme os seguintes pontos:
 
-| Item auditado | Evidência que deve existir |
-| --- | --- |
-| Pedido e ItemPedido | Relação 1:N e <code>UNIQUE(pedido_id, codigo_item_pedido)</code>. |
-| ItemPedido e Exame | Entidades diferentes, sem FK direta; correlação por <code>accession_number</code>. |
-| Exame | <code>UNIQUE(accession_number)</code> como premissa limitada ao desafio. |
-| Documento | Regra de unicidade pelo código de pedido de referência e código de documento. |
-| Documento antes de Pedido | <code>pedido_id</code> pode ficar nulo enquanto <code>codigo_pedido_referencia</code> mantém a chave de negócio. |
-| Documento e Exame | Tabela N:N com PK composta <code>(documento_id, exame_id)</code>. |
-| Índices | Busca por <code>itens_pedido.accession_number</code> e navegação inversa por <code>documentos_exames.exame_id</code>. |
-| Estados | Pedido integrado se existir ao menos um Exame correspondente; Documento integrado se existir ao menos um vínculo. |
+| Item auditado             | Evidência que deve existir                                                                                            |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Pedido e ItemPedido       | Relação 1:N e <code>UNIQUE(pedido_id, codigo_item_pedido)</code>.                                                     |
+| ItemPedido e Exame        | Entidades diferentes, sem FK direta; correlação por <code>accession_number</code>.                                    |
+| Exame                     | <code>UNIQUE(accession_number)</code> como premissa limitada ao desafio.                                              |
+| Documento                 | Regra de unicidade pelo código de pedido de referência e código de documento.                                         |
+| Documento antes de Pedido | <code>pedido_id</code> pode ficar nulo enquanto <code>codigo_pedido_referencia</code> mantém a chave de negócio.      |
+| Documento e Exame         | Tabela N:N com PK composta <code>(documento_id, exame_id)</code>.                                                     |
+| Índices                   | Busca por <code>itens_pedido.accession_number</code> e navegação inversa por <code>documentos_exames.exame_id</code>. |
+| Estados                   | Pedido integrado se existir ao menos um Exame correspondente; Documento integrado se existir ao menos um vínculo.     |
 
 Comandos rápidos de conferência documental:
 
-~~~bash
+```bash
 rg -n "UNIQUE \(pedido_id, codigo_item_pedido\)|UNIQUE \(accession_number\)" docs/modelo-dados.md
 rg -n "codigo_pedido_referencia|documentos_exames|ReconciliationService" docs/modelo-dados.md
-~~~
+```
 
 ## Auditoria 3 — cenários funcionais que a API deve provar
 
@@ -112,7 +112,7 @@ Use estes dados de referência contra a API em execução. Os E2E reproduzem os
 fluxos principais, mas a inspeção manual abaixo continua sendo a evidência do
 smoke test final.
 
-~~~json
+```json
 {
   "pedido": {
     "CodigoPedido": 616,
@@ -142,7 +142,7 @@ smoke test final.
     "Status": "NOVO"
   }
 }
-~~~
+```
 
 > **Nota de auditoria:** o exemplo de Pedido do enunciado usa
 > <code>CodigoPedido = 616</code>, enquanto o exemplo isolado de Documento usa
@@ -204,11 +204,11 @@ ordem. Ele não deve criar um Pedido incompleto só para aceitar o Documento.
 ## Auditoria 4 — comandos de execução real
 
 Os comandos abaixo verificam uma instalação que parte de um banco disponível.
-Os resultados já executados e os bloqueios do ambiente atual estão registrados
-em [auditoria-entrega.md](auditoria-entrega.md). Execute-os novamente em um
-ambiente com acesso ao daemon Docker antes de considerar a entrega aprovada.
+Os resultados executados desta entrega estão registrados em
+[auditoria-entrega.md](auditoria-entrega.md). Repita-os quando quiser auditar
+outro ambiente ou uma alteração futura.
 
-~~~bash
+```bash
 npm ci
 npm run lint
 npm run format:check
@@ -221,17 +221,17 @@ npm run migration:show
 npm run test:e2e
 curl -fsS http://localhost:3000/health
 curl -fsS http://localhost:3000/docs-json > /dev/null
-~~~
+```
 
 Para auditar uma instalação sem dados anteriores, use um ambiente Docker
 isolado e, somente se puder descartar o volume daquele ambiente, execute:
 
-~~~bash
+```bash
 docker compose down -v
 docker compose up --build -d --wait
 docker compose ps
 npm run test:e2e
-~~~
+```
 
 <code>docker compose down -v</code> remove o volume PostgreSQL do projeto;
 não o use contra dados que precisem ser preservados. O Compose inicia a API
@@ -243,20 +243,20 @@ suba apenas <code>db</code> e rode <code>npm run migration:run</code> antes de
 
 Defina a URL apenas no terminal de auditoria:
 
-~~~bash
+```bash
 AUDIT_API_URL=http://localhost:3000
-~~~
+```
 
 Use os payloads do cenário anterior para enviar os três POSTs na ordem de cada
 cenário. Envie um <code>x-request-id</code> conhecido em pelo menos uma
 requisição e confirme que o mesmo valor volta no header de resposta. Após cada
 escrita, consulte:
 
-~~~bash
+```bash
 curl "$AUDIT_API_URL/pedidos/616"
 curl "$AUDIT_API_URL/documentos/616"
 curl "$AUDIT_API_URL/exames/930"
-~~~
+```
 
 A auditoria deve avaliar o estado final, não apenas o código HTTP de sucesso:
 
@@ -276,13 +276,13 @@ No container PostgreSQL, confira constraints antes de testar fluxos. O comando
 abaixo abre uma sessão no banco padrão do Compose; ajuste as variáveis caso a
 auditoria use outra configuração:
 
-~~~bash
+```bash
 docker compose exec db psql -U postgres -d med_desafio
-~~~
+```
 
 Então execute:
 
-~~~sql
+```sql
 SELECT conname, pg_get_constraintdef(oid)
 FROM pg_constraint
 WHERE conrelid IN (
@@ -293,11 +293,11 @@ WHERE conrelid IN (
   'documentos_exames'::regclass
 )
 ORDER BY conrelid::regclass::text, conname;
-~~~
+```
 
 Após o Cenário A, consulte:
 
-~~~sql
+```sql
 SELECT p.codigo_pedido, p.integrado, i.codigo_item_pedido, i.accession_number
 FROM pedidos p
 JOIN itens_pedido i ON i.pedido_id = p.id
@@ -308,7 +308,7 @@ FROM documentos d
 LEFT JOIN documentos_exames de ON de.documento_id = d.id
 LEFT JOIN exames e ON e.id = de.exame_id
 WHERE d.codigo_pedido_referencia = '616';
-~~~
+```
 
 Resultado esperado:
 
@@ -321,39 +321,39 @@ Resultado esperado:
 
 ## Critérios de aceite para fechar cada nível
 
-As caixas abaixo são um registro de aceite para a próxima auditoria. O estado
-local já observado deve ser consultado na
-[matriz de auditoria da entrega](auditoria-entrega.md). Em especial, não marque
-Docker, migrations, E2E ou smoke HTTP como aprovados enquanto esses comandos
-não tiverem sido concluídos em PostgreSQL acessível.
+As caixas abaixo refletem a auditoria executada e registrada na
+[matriz de auditoria da entrega](auditoria-entrega.md). Em uma auditoria futura,
+desmarque e revalide qualquer item afetado por uma alteração. Docker,
+migrations, E2E e smoke HTTP só ficam marcados depois de terem sido executados
+em PostgreSQL acessível.
 
 ### Nível 1
 
-- [ ] Docker sobe aplicação e PostgreSQL.
-- [ ] Todas as migrations aplicam em banco vazio.
-- [ ] Seis endpoints obrigatórios respondem.
-- [ ] Cenários A, B, D e E passam; Cenário C passa se mantida a decisão de
-  aceitar Documento antes de Pedido.
-- [ ] Jest executa os testes exigidos.
-- [ ] Swagger e logs estão acessíveis.
-- [ ] README permite outra pessoa repetir a validação.
+- [x] Docker sobe aplicação e PostgreSQL.
+- [x] Todas as migrations aplicam em banco vazio.
+- [x] Seis endpoints obrigatórios respondem.
+- [x] Cenários A, B, D e E passam; Cenário C passa se mantida a decisão de
+      aceitar Documento antes de Pedido.
+- [x] Jest executa os testes exigidos.
+- [x] Swagger e logs estão acessíveis.
+- [x] README permite outra pessoa repetir a validação.
 
 ### Nível 2
 
-- [ ] Controllers não contêm a regra de reconciliação.
-- [ ] Escritas e reconciliação sensíveis são transacionais.
-- [ ] Constraints, índices e erros de duplicidade são testados.
-- [ ] Há testes unitários e E2E para todas as ordens de chegada.
-- [ ] Migrations substituem <code>synchronize</code>.
-- [ ] Reenvios não criam itens, documentos ou vínculos duplicados.
+- [x] Controllers não contêm a regra de reconciliação.
+- [x] Escritas e reconciliação sensíveis são transacionais.
+- [x] Constraints, índices e erros de duplicidade são testados.
+- [x] Há testes unitários e E2E para todas as ordens de chegada.
+- [x] Migrations substituem <code>synchronize</code>.
+- [x] Reenvios não criam itens, documentos ou vínculos duplicados.
 
 ### Nível 3
 
-- [ ] Logs possuem <code>requestId</code> ou <code>correlationId</code>.
-- [ ] Healthcheck, lint, formatação e cobertura são verificáveis.
-- [ ] CI executa lint, testes e build.
-- [ ] Estratégia de recuperação/reprocessamento está documentada, sem exigir
-  cron na primeira versão.
+- [x] Logs possuem <code>requestId</code> ou <code>correlationId</code>.
+- [x] Healthcheck, lint, formatação e cobertura são verificáveis.
+- [x] CI está configurada para executar lint, testes e build.
+- [x] Estratégia de recuperação/reprocessamento está documentada, sem exigir
+      cron na primeira versão.
 
 ## Como registrar a auditoria
 

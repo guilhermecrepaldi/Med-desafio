@@ -78,13 +78,13 @@ test/            # E2E com Nest, Supertest e PostgreSQL
 O diagrama ER completo, campos e justificativas estão em
 [docs/modelo-dados.md](docs/modelo-dados.md).
 
-| Entidade | Papel | Proteções no banco |
-| --- | --- | --- |
-| `pedidos` | Solicitação de exames. | `UNIQUE(codigo_pedido)` |
-| `itens_pedido` | Procedimento solicitado; não é o Exame recebido. | FK para Pedido e `UNIQUE(pedido_id, codigo_item_pedido)` |
-| `exames` | Evento de Exame efetivamente recebido. | `UNIQUE(accession_number)` |
-| `documentos` | Anexo referente a Pedido; pode aguardá-lo. | `UNIQUE(codigo_pedido_referencia, codigo_documento)` e FK composta após resolução |
-| `documentos_exames` | Vínculo N:N auditável entre Documento e Exame. | PK composta `(documento_id, exame_id)` |
+| Entidade            | Papel                                            | Proteções no banco                                                                |
+| ------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `pedidos`           | Solicitação de exames.                           | `UNIQUE(codigo_pedido)`                                                           |
+| `itens_pedido`      | Procedimento solicitado; não é o Exame recebido. | FK para Pedido e `UNIQUE(pedido_id, codigo_item_pedido)`                          |
+| `exames`            | Evento de Exame efetivamente recebido.           | `UNIQUE(accession_number)`                                                        |
+| `documentos`        | Anexo referente a Pedido; pode aguardá-lo.       | `UNIQUE(codigo_pedido_referencia, codigo_documento)` e FK composta após resolução |
+| `documentos_exames` | Vínculo N:N auditável entre Documento e Exame.   | PK composta `(documento_id, exame_id)`                                            |
 
 Identificadores externos são armazenados como texto para preservar zeros à
 esquerda. Entradas numéricas do enunciado são convertidas para texto; a
@@ -120,14 +120,14 @@ mas não é necessário para o fluxo normal deste desafio.
 O enunciado não define o comportamento para mensagens repetidas e divergentes.
 As premissas abaixo evitam alteração silenciosa de dados:
 
-| Requisição repetida | Comportamento |
-| --- | --- |
-| Pedido com mesmo `CodigoPedido` e mesmo cabeçalho | Reutiliza o Pedido e adiciona somente ItemPedido novo. Retorna `200 OK`. |
-| Item com mesmo `CodigoItemPedido` e mesmos dados | É ignorado, sem duplicação. |
-| Pedido ou ItemPedido existente com dados divergentes | `409 Conflict`; a primeira mensagem não é modificada silenciosamente. |
-| Exame com mesmo `AccessionNumber` e mesmos dados | É idempotente, reconcilia novamente e retorna `200 OK`. |
-| Exame com mesmo accession e dados divergentes | `409 Conflict`. |
-| Documento com mesmo `CodigoDocumento + CodigoPedido` | `409 Conflict`, como exige o desafio. |
+| Requisição repetida                                  | Comportamento                                                            |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| Pedido com mesmo `CodigoPedido` e mesmo cabeçalho    | Reutiliza o Pedido e adiciona somente ItemPedido novo. Retorna `200 OK`. |
+| Item com mesmo `CodigoItemPedido` e mesmos dados     | É ignorado, sem duplicação.                                              |
+| Pedido ou ItemPedido existente com dados divergentes | `409 Conflict`; a primeira mensagem não é modificada silenciosamente.    |
+| Exame com mesmo `AccessionNumber` e mesmos dados     | É idempotente, reconcilia novamente e retorna `200 OK`.                  |
+| Exame com mesmo accession e dados divergentes        | `409 Conflict`.                                                          |
+| Documento com mesmo `CodigoDocumento + CodigoPedido` | `409 Conflict`, como exige o desafio.                                    |
 
 A PK composta de `documentos_exames`, somada à inserção idempotente, impede
 vínculos duplicados mesmo se a reconciliação for executada mais de uma vez.
@@ -142,15 +142,15 @@ vínculos duplicados mesmo se a reconciliação for executada mais de uma vez.
 Os campos externos preservam a capitalização do enunciado. Identificadores são
 retornados como strings para preservar sua representação.
 
-| Método e rota | Sucesso | Corpo |
-| --- | --- | --- |
-| `POST /pedidos` | `201 Created` novo; `200 OK` reenvio válido | `PedidoResponse` |
-| `POST /documentos` | `201 Created` | `DocumentoResponse` |
-| `POST /exames` | `201 Created` novo; `200 OK` reenvio idêntico | `ExameResponse` |
-| `GET /pedidos/:codigoPedido` | `200 OK` | `PedidoResponse` |
-| `GET /documentos/:codigoPedido` | `200 OK` | lista de `DocumentoResponse` |
-| `GET /exames/:accessionNumber` | `200 OK` | `ExameResponse` |
-| `GET /health` | `200 OK` | `{ "status": "ok" }` |
+| Método e rota                   | Sucesso                                       | Corpo                        |
+| ------------------------------- | --------------------------------------------- | ---------------------------- |
+| `POST /pedidos`                 | `201 Created` novo; `200 OK` reenvio válido   | `PedidoResponse`             |
+| `POST /documentos`              | `201 Created`                                 | `DocumentoResponse`          |
+| `POST /exames`                  | `201 Created` novo; `200 OK` reenvio idêntico | `ExameResponse`              |
+| `GET /pedidos/:codigoPedido`    | `200 OK`                                      | `PedidoResponse`             |
+| `GET /documentos/:codigoPedido` | `200 OK`                                      | lista de `DocumentoResponse` |
+| `GET /exames/:accessionNumber`  | `200 OK`                                      | `ExameResponse`              |
+| `GET /health`                   | `200 OK`                                      | `{ "status": "ok" }`         |
 
 O Swagger descreve DTOs, exemplos, status e respostas de erro de todas as
 rotas.
@@ -253,13 +253,13 @@ As respostas de erro seguem o mesmo formato e não expõem stack trace:
 }
 ```
 
-| Status | Situação |
-| --- | --- |
-| `400 Bad Request` | Campo ausente, tipo inválido, campo extra, data inválida ou identificador inválido. |
-| `404 Not Found` | Recurso solicitado em GET não existe. |
-| `409 Conflict` | Documento duplicado, reenvio divergente ou violação de unicidade. |
-| `500 Internal Server Error` | Falha inesperada; detalhes técnicos ficam nos logs. |
-| `503 Service Unavailable` | Healthcheck sem acesso ao banco. |
+| Status                      | Situação                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| `400 Bad Request`           | Campo ausente, tipo inválido, campo extra, data inválida ou identificador inválido. |
+| `404 Not Found`             | Recurso solicitado em GET não existe.                                               |
+| `409 Conflict`              | Documento duplicado, reenvio divergente ou violação de unicidade.                   |
+| `500 Internal Server Error` | Falha inesperada; detalhes técnicos ficam nos logs.                                 |
+| `503 Service Unavailable`   | Healthcheck sem acesso ao banco.                                                    |
 
 ## Logs e request ID
 
@@ -293,16 +293,16 @@ Crie o ambiente local:
 cp .env.example .env
 ```
 
-| Variável | Padrão | Finalidade |
-| --- | --- | --- |
-| `PORT` | `3000` | Porta HTTP local; no Compose, porta publicada no host. |
-| `DB_HOST` | `localhost` | Host PostgreSQL. |
-| `DB_PORT` | `5432` | Porta PostgreSQL. |
-| `DB_USERNAME` | `postgres` | Usuário do banco. |
-| `DB_PASSWORD` | `postgres` | Senha de desenvolvimento. |
-| `DB_DATABASE` | `med_desafio` | Banco principal. |
-| `E2E_DB_DATABASE` | `med_desafio_test` | Banco exclusivo da suíte E2E. |
-| `RUN_MIGRATIONS_ON_START` | `false` | Aplica migrations no boot quando `true`. |
+| Variável                  | Padrão             | Finalidade                                             |
+| ------------------------- | ------------------ | ------------------------------------------------------ |
+| `PORT`                    | `3000`             | Porta HTTP local; no Compose, porta publicada no host. |
+| `DB_HOST`                 | `localhost`        | Host PostgreSQL.                                       |
+| `DB_PORT`                 | `5432`             | Porta PostgreSQL.                                      |
+| `DB_USERNAME`             | `postgres`         | Usuário do banco.                                      |
+| `DB_PASSWORD`             | `postgres`         | Senha de desenvolvimento.                              |
+| `DB_DATABASE`             | `med_desafio`      | Banco principal.                                       |
+| `E2E_DB_DATABASE`         | `med_desafio_test` | Banco exclusivo da suíte E2E.                          |
+| `RUN_MIGRATIONS_ON_START` | `false`            | Aplica migrations no boot quando `true`.               |
 
 `.env` não é versionado. Não use senhas ou tokens reais em
 `.env.example` nem em commits.

@@ -6,9 +6,9 @@ O modelo relacional permite receber Pedido, Documento e Exame em ordens
 diferentes, persistir o que chegou e reconciliar os vínculos possíveis depois.
 A sequência de cada entrada é:
 
-~~~text
+```text
 receber -> validar -> persistir -> reconciliar -> criar vínculos -> atualizar estados
-~~~
+```
 
 Há uma distinção intencional entre duas entidades que o enunciado chama de
 “exame” em contextos diferentes:
@@ -34,7 +34,7 @@ validada e persistida como <code>DATE</code>.
 
 ## Diagrama ER
 
-~~~mermaid
+```mermaid
 erDiagram
     PEDIDOS ||--o{ ITENS_PEDIDO : possui
     PEDIDOS o|--o{ DOCUMENTOS : associa_apos_reconciliacao
@@ -70,7 +70,7 @@ erDiagram
         bigint exame_id PK, FK
         timestamptz created_at
     }
-~~~
+```
 
 O elo entre <code>ITENS_PEDIDO</code> e <code>EXAMES</code> é **lógico**, por
 igualdade de <code>accession_number</code>; não existe FK entre eles. Isso
@@ -87,17 +87,17 @@ um Pedido.
 
 ### <code>pedidos</code>
 
-| Coluna | Tipo e regra | Observação |
-| --- | --- | --- |
-| <code>id</code> | <code>BIGINT</code> PK por identidade | Chave técnica interna. |
-| <code>codigo_pedido</code> | <code>VARCHAR(100) NOT NULL UNIQUE</code> | Identificador de negócio do pedido. |
-| <code>nome_paciente</code> | <code>VARCHAR(255) NOT NULL</code> | Valor do payload de pedido. |
-| <code>data_nascimento</code> | <code>DATE NOT NULL</code> | Entrada prevista como <code>YYYYMMDD</code>. |
-| <code>sexo</code> | <code>VARCHAR(20) NOT NULL</code> | Sem enum/check: o desafio não fixa valores permitidos. |
-| <code>cod_unidade</code> | <code>VARCHAR(100) NOT NULL</code> | Código externo preservado como texto. |
-| <code>integrado</code> | <code>BOOLEAN NOT NULL DEFAULT FALSE</code> | Estado materializado de integração. |
-| <code>created_at</code> | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Auditoria. |
-| <code>updated_at</code> | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Atualizado pelo ORM/aplicação. |
+| Coluna                       | Tipo e regra                                    | Observação                                             |
+| ---------------------------- | ----------------------------------------------- | ------------------------------------------------------ |
+| <code>id</code>              | <code>BIGINT</code> PK por identidade           | Chave técnica interna.                                 |
+| <code>codigo_pedido</code>   | <code>VARCHAR(100) NOT NULL UNIQUE</code>       | Identificador de negócio do pedido.                    |
+| <code>nome_paciente</code>   | <code>VARCHAR(255) NOT NULL</code>              | Valor do payload de pedido.                            |
+| <code>data_nascimento</code> | <code>DATE NOT NULL</code>                      | Entrada prevista como <code>YYYYMMDD</code>.           |
+| <code>sexo</code>            | <code>VARCHAR(20) NOT NULL</code>               | Sem enum/check: o desafio não fixa valores permitidos. |
+| <code>cod_unidade</code>     | <code>VARCHAR(100) NOT NULL</code>              | Código externo preservado como texto.                  |
+| <code>integrado</code>       | <code>BOOLEAN NOT NULL DEFAULT FALSE</code>     | Estado materializado de integração.                    |
+| <code>created_at</code>      | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Auditoria.                                             |
+| <code>updated_at</code>      | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Atualizado pelo ORM/aplicação.                         |
 
 Além da unicidade de <code>codigo_pedido</code>, haverá
 <code>UNIQUE (id, codigo_pedido)</code>. Ela serve como chave-alvo da FK
@@ -106,22 +106,22 @@ composta de documentos e garante que, ao preencher um
 
 ### <code>itens_pedido</code>
 
-| Coluna | Tipo e regra | Observação |
-| --- | --- | --- |
-| <code>id</code> | <code>BIGINT</code> PK por identidade | Chave técnica interna. |
-| <code>pedido_id</code> | <code>BIGINT NOT NULL</code> FK para <code>pedidos(id)</code> | Cada item pertence a um Pedido. |
-| <code>codigo_item_pedido</code> | <code>VARCHAR(100) NOT NULL</code> | Identifica o item no contexto do pedido. |
-| <code>accession_number</code> | <code>VARCHAR(100) NOT NULL</code> | Chave de correlação lógica com Exame. |
-| <code>modalidade</code> | <code>VARCHAR(50) NOT NULL</code> | Ex.: <code>CR</code>. |
-| <code>nome_procedimento</code> | <code>VARCHAR(255) NOT NULL</code> | Procedimento solicitado. |
-| <code>created_at</code> | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Auditoria. |
-| <code>updated_at</code> | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Atualizado pelo ORM/aplicação. |
+| Coluna                          | Tipo e regra                                                  | Observação                               |
+| ------------------------------- | ------------------------------------------------------------- | ---------------------------------------- |
+| <code>id</code>                 | <code>BIGINT</code> PK por identidade                         | Chave técnica interna.                   |
+| <code>pedido_id</code>          | <code>BIGINT NOT NULL</code> FK para <code>pedidos(id)</code> | Cada item pertence a um Pedido.          |
+| <code>codigo_item_pedido</code> | <code>VARCHAR(100) NOT NULL</code>                            | Identifica o item no contexto do pedido. |
+| <code>accession_number</code>   | <code>VARCHAR(100) NOT NULL</code>                            | Chave de correlação lógica com Exame.    |
+| <code>modalidade</code>         | <code>VARCHAR(50) NOT NULL</code>                             | Ex.: <code>CR</code>.                    |
+| <code>nome_procedimento</code>  | <code>VARCHAR(255) NOT NULL</code>                            | Procedimento solicitado.                 |
+| <code>created_at</code>         | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code>               | Auditoria.                               |
+| <code>updated_at</code>         | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code>               | Atualizado pelo ORM/aplicação.           |
 
 Constraint obrigatória:
 
-~~~text
+```text
 UNIQUE (pedido_id, codigo_item_pedido)
-~~~
+```
 
 Ela impede que o reenvio duplique o mesmo item dentro de um pedido, sem
 proibir que o mesmo <code>CodigoItemPedido</code> exista em pedidos
@@ -135,15 +135,15 @@ acrescentaria uma regra não solicitada. Haverá, em vez disso, índice por
 
 ### <code>exames</code>
 
-| Coluna | Tipo e regra | Observação |
-| --- | --- | --- |
-| <code>id</code> | <code>BIGINT</code> PK por identidade | Chave técnica interna. |
-| <code>accession_number</code> | <code>VARCHAR(100) NOT NULL UNIQUE</code> | Identificador natural no escopo deste desafio. |
-| <code>nome_paciente</code> | <code>VARCHAR(255) NOT NULL</code> | Valor do evento recebido. |
-| <code>modalidade</code> | <code>VARCHAR(50) NOT NULL</code> | Valor do evento recebido. |
-| <code>status</code> | <code>VARCHAR(50) NOT NULL</code> | Sem enum/check: o ciclo de vida não foi definido. |
-| <code>created_at</code> | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Auditoria. |
-| <code>updated_at</code> | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Atualizado pelo ORM/aplicação. |
+| Coluna                        | Tipo e regra                                    | Observação                                        |
+| ----------------------------- | ----------------------------------------------- | ------------------------------------------------- |
+| <code>id</code>               | <code>BIGINT</code> PK por identidade           | Chave técnica interna.                            |
+| <code>accession_number</code> | <code>VARCHAR(100) NOT NULL UNIQUE</code>       | Identificador natural no escopo deste desafio.    |
+| <code>nome_paciente</code>    | <code>VARCHAR(255) NOT NULL</code>              | Valor do evento recebido.                         |
+| <code>modalidade</code>       | <code>VARCHAR(50) NOT NULL</code>               | Valor do evento recebido.                         |
+| <code>status</code>           | <code>VARCHAR(50) NOT NULL</code>               | Sem enum/check: o ciclo de vida não foi definido. |
+| <code>created_at</code>       | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Auditoria.                                        |
+| <code>updated_at</code>       | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Atualizado pelo ORM/aplicação.                    |
 
 <code>UNIQUE (accession_number)</code> é uma premissa explícita deste desafio.
 Em uma integração hospitalar real, um accession pode depender de emissor,
@@ -152,26 +152,26 @@ validar o sistema de origem.
 
 ### <code>documentos</code>
 
-| Coluna | Tipo e regra | Observação |
-| --- | --- | --- |
-| <code>id</code> | <code>BIGINT</code> PK por identidade | Chave técnica interna. |
-| <code>codigo_documento</code> | <code>VARCHAR(100) NOT NULL</code> | Código externo do documento. |
-| <code>codigo_pedido_referencia</code> | <code>VARCHAR(100) NOT NULL</code> | <code>CodigoPedido</code> recebido; mantém o documento identificável antes do Pedido existir. |
-| <code>pedido_id</code> | <code>BIGINT NULL</code> FK composta para <code>pedidos(id, codigo_pedido)</code> | Nulo somente enquanto aguarda o Pedido; preenchido na reconciliação. |
-| <code>nome_documento</code> | <code>VARCHAR(255) NOT NULL</code> | Ex.: <code>PEDIDO</code>. |
-| <code>documento</code> | <code>TEXT NOT NULL</code> | Conteúdo Base64 previsto no escopo, sem storage externo. |
-| <code>integrado</code> | <code>BOOLEAN NOT NULL DEFAULT FALSE</code> | Verdadeiro depois de existir ao menos um vínculo. |
-| <code>created_at</code> | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Auditoria. |
-| <code>updated_at</code> | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Atualizado pelo ORM/aplicação. |
+| Coluna                                | Tipo e regra                                                                      | Observação                                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| <code>id</code>                       | <code>BIGINT</code> PK por identidade                                             | Chave técnica interna.                                                                        |
+| <code>codigo_documento</code>         | <code>VARCHAR(100) NOT NULL</code>                                                | Código externo do documento.                                                                  |
+| <code>codigo_pedido_referencia</code> | <code>VARCHAR(100) NOT NULL</code>                                                | <code>CodigoPedido</code> recebido; mantém o documento identificável antes do Pedido existir. |
+| <code>pedido_id</code>                | <code>BIGINT NULL</code> FK composta para <code>pedidos(id, codigo_pedido)</code> | Nulo somente enquanto aguarda o Pedido; preenchido na reconciliação.                          |
+| <code>nome_documento</code>           | <code>VARCHAR(255) NOT NULL</code>                                                | Ex.: <code>PEDIDO</code>.                                                                     |
+| <code>documento</code>                | <code>TEXT NOT NULL</code>                                                        | Conteúdo Base64 previsto no escopo, sem storage externo.                                      |
+| <code>integrado</code>                | <code>BOOLEAN NOT NULL DEFAULT FALSE</code>                                       | Verdadeiro depois de existir ao menos um vínculo.                                             |
+| <code>created_at</code>               | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code>                                   | Auditoria.                                                                                    |
+| <code>updated_at</code>               | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code>                                   | Atualizado pelo ORM/aplicação.                                                                |
 
 As constraints de documento são:
 
-~~~text
+```text
 UNIQUE (codigo_pedido_referencia, codigo_documento)
 UNIQUE (pedido_id, codigo_documento)
 FOREIGN KEY (pedido_id, codigo_pedido_referencia)
   REFERENCES pedidos (id, codigo_pedido)
-~~~
+```
 
 A primeira é a proteção autoritativa da regra original
 <code>CodigoDocumento + CodigoPedido</code>, inclusive enquanto o documento
@@ -194,17 +194,17 @@ a criação implícita de um Pedido incompleto.
 
 ### <code>documentos_exames</code>
 
-| Coluna | Tipo e regra | Observação |
-| --- | --- | --- |
-| <code>documento_id</code> | <code>BIGINT NOT NULL</code> FK para <code>documentos(id)</code> | Parte da PK composta. |
-| <code>exame_id</code> | <code>BIGINT NOT NULL</code> FK para <code>exames(id)</code> | Parte da PK composta. |
-| <code>created_at</code> | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> | Momento da reconciliação. |
+| Coluna                    | Tipo e regra                                                     | Observação                |
+| ------------------------- | ---------------------------------------------------------------- | ------------------------- |
+| <code>documento_id</code> | <code>BIGINT NOT NULL</code> FK para <code>documentos(id)</code> | Parte da PK composta.     |
+| <code>exame_id</code>     | <code>BIGINT NOT NULL</code> FK para <code>exames(id)</code>     | Parte da PK composta.     |
+| <code>created_at</code>   | <code>TIMESTAMPTZ NOT NULL DEFAULT NOW()</code>                  | Momento da reconciliação. |
 
 A chave primária é composta por:
 
-~~~text
+```text
 PRIMARY KEY (documento_id, exame_id)
-~~~
+```
 
 A associação não tem identidade de negócio própria nem atributos que
 justifiquem uma chave surrogate. A PK composta já representa e garante
@@ -214,13 +214,13 @@ justifiquem uma chave surrogate. A PK composta já representa e garante
 
 Além das PKs, FKs e unicidades, a migration inicial deve criar:
 
-| Objeto | Finalidade |
-| --- | --- |
-| índice de <code>itens_pedido(accession_number)</code> | Localizar itens quando um Exame chega. |
-| índice implícito de <code>documentos(codigo_pedido_referencia, codigo_documento)</code> | Criado pela unicidade; atende a busca do GET inclusive para documentos pendentes. |
-| índice implícito de <code>documentos(pedido_id, codigo_documento)</code> | Criado pela unicidade; atende a busca de documentos já resolvidos por Pedido. |
-| índice de <code>documentos_exames(exame_id)</code> | Navegar de Exame para Documento; a PK já cobre buscas por <code>documento_id</code>. |
-| índices das constraints <code>UNIQUE</code> | Consultas por códigos de negócio e proteção contra duplicidade. |
+| Objeto                                                                                  | Finalidade                                                                           |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| índice de <code>itens_pedido(accession_number)</code>                                   | Localizar itens quando um Exame chega.                                               |
+| índice implícito de <code>documentos(codigo_pedido_referencia, codigo_documento)</code> | Criado pela unicidade; atende a busca do GET inclusive para documentos pendentes.    |
+| índice implícito de <code>documentos(pedido_id, codigo_documento)</code>                | Criado pela unicidade; atende a busca de documentos já resolvidos por Pedido.        |
+| índice de <code>documentos_exames(exame_id)</code>                                      | Navegar de Exame para Documento; a PK já cobre buscas por <code>documento_id</code>. |
+| índices das constraints <code>UNIQUE</code>                                             | Consultas por códigos de negócio e proteção contra duplicidade.                      |
 
 Não há índice isolado de <code>integrado</code> no início: não existe consulta
 prevista que o justifique e booleanos costumam ter baixa seletividade.
